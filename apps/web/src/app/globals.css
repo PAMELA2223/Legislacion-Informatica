@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   IDENTIDAD VISUAL — Plataforma de Legislación Informática
+   Paleta de tesis: navy estructural, azul tecnológico interactivo,
+   turquesa como acento de innovación/éxito, dorado académico como
+   detalle mínimo (insignias, líneas decorativas, badges).
+   Valores en "R G B" (sin comas) para que Tailwind pueda aplicar
+   opacidad con /10, /20, /90, etc.
+   ============================================================ */
+:root {
+  --color-navy: 15 23 42;               /* #0F172A */
+  --color-navy-light: 30 41 59;         /* #1E293B */
+
+  --color-primary: 37 99 235;           /* #2563EB azul tecnológico */
+  --color-primary-hover: 29 78 216;     /* #1D4ED8 */
+  --color-primary-dark: 30 58 138;      /* #1E3A8A */
+
+  --color-secondary: 28 185 75;         /* #1CB94B */
+  --color-success: 20 184 166;          /* #14B8A6 turquesa */
+  --color-accent: 20 184 166;           /* #14B8A6 turquesa (indicadores/innovación) */
+  --color-gold: 212 167 44;             /* #D4A72C dorado académico — uso mínimo */
+
+  --color-background: 248 250 252;      /* #F8FAFC */
+  --color-background-secondary: 241 245 249; /* #F1F5F9 */
+  --color-surface: 255 255 255;         /* #FFFFFF */
+
+  --color-foreground: 15 23 42;         /* #0F172A texto principal */
+  --color-muted-foreground: 100 116 139; /* #64748B texto secundario */
+  --color-disabled-foreground: 148 163 184; /* #94A3B8 */
+
+  --color-border: 226 232 240;          /* #E2E8F0 */
+  --color-border-strong: 203 213 225;   /* #CBD5E1 */
+}
+
+.dark {
+  --color-navy: 2 6 23;                 /* #020617 */
+  --color-navy-light: 15 23 42;         /* #0F172A */
+
+  --color-primary: 59 130 246;          /* azul un poco más claro para contraste en fondo oscuro */
+  --color-primary-hover: 37 99 235;
+  --color-primary-dark: 191 219 254;
+
+  --color-secondary: 34 197 94;
+  --color-success: 45 212 191;          /* turquesa clara */
+  --color-accent: 45 212 191;
+  --color-gold: 224 190 92;             /* dorado suavizado en oscuro */
+
+  --color-background: 2 6 23;           /* #020617 — escala oscura elegante, no negro puro */
+  --color-background-secondary: 15 23 42; /* #0F172A */
+  --color-surface: 15 23 42;            /* #0F172A (tarjetas) */
+
+  --color-foreground: 241 245 249;      /* slate-100 */
+  --color-muted-foreground: 148 163 184; /* slate-400 */
+  --color-disabled-foreground: 100 116 139; /* slate-500 */
+
+  --color-border: 30 41 59;             /* #1E293B */
+  --color-border-strong: 51 65 85;      /* #334155 */
+}
+
+/* ============================================================
+   LOGIN — identidad visual dedicada
+   Plataforma de Legislación Informática
+   Estos tokens son independientes del selector de tema claro/oscuro
+   general de la app: el panel de inicio de sesión usa siempre un
+   fondo azul marino profundo (según diseño de referencia de tesis),
+   sin importar si el usuario tiene activado el modo claro u oscuro
+   en el resto de la plataforma. No reemplazan ni duplican los
+   tokens generales (--color-primary, --color-accent, etc.), son
+   variables nuevas y con prefijo propio.
+   ============================================================ */
+:root {
+  --color-login-bg: 7 11 42;                 /* #070B2A fondo principal */
+  --color-login-bg-secondary: 13 19 56;      /* #0D1338 fondo secundario */
+  --color-login-surface: 13 19 56;           /* #0D1338 tarjeta de login */
+  --color-login-border: 49 46 129;           /* #312E81 borde translúcido azul tecnológico */
+  --color-login-text: 248 250 252;           /* #F8FAFC texto principal */
+  --color-login-text-secondary: 203 213 225; /* #CBD5E1 texto secundario */
+  --color-login-indigo: 49 46 129;           /* #312E81 azul tecnológico */
+  --color-login-violet: 124 58 237;          /* #7C3AED */
+  --color-login-magenta: 217 70 239;         /* #D946EF */
+  --color-login-pink: 236 72 153;            /* #EC4899 */
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: "Inter", "Poppins", -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+a,
+input,
+select {
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease,
+    box-shadow 200ms ease, transform 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ============================================================
+   ACCESIBILIDAD — foco visible consistente
+   Refuerza (no reemplaza) los estilos de foco de cada componente:
+   garantiza un indicador de foco visible y con contraste suficiente
+   para navegación por teclado en toda la aplicación (WCAG 2.4.7).
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid rgb(var(--color-primary));
+  outline-offset: 2px;
+  border-radius: 2px;
+}

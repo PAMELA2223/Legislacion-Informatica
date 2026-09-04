@@ -1,0 +1,617 @@
+// ============================================================
+// PRISMA SCHEMA — Fase 2: Autenticación
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Rol {
+  ADMINISTRADOR
+  DOCENTE
+  ESTUDIANTE
+  INVITADO
+}
+
+model User {
+  id            String   @id @default(uuid()) // debe coincidir con auth.users.id de Supabase
+  email         String   @unique
+  nombre        String
+  rol           Rol      @default(ESTUDIANTE)
+  avatarUrl     String?  @map("avatar_url")
+  xp            Int      @default(0)
+  nivel         Int      @default(1)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  enrollments      Enrollment[]
+  lessonProgress   LessonProgress[]
+  favoritos        Favorite[]
+  intentos         QuizAttempt[]
+  intentosCasos    CaseAttempt[]
+  autoevaluaciones SelfAssessmentResponse[]
+  insignias        BadgeEarned[]
+  hilosForo        ForumThread[]
+  publicacionesForo ForumPost[]
+  reaccionesForo   ForumReaction[]
+  logs             AuditLog[]
+  tutoriasComoDocente    TutoringAssignment[]  @relation("DocenteDe")
+  tutoriasComoEstudiante TutoringAssignment[]  @relation("EstudianteDe")
+  observacionesTutoria   TutoringObservation[]
+
+  @@map("users")
+}
+
+// ============================================================
+// FASE 9 — ADMINISTRACIÓN (auditoría)
+// ============================================================
+
+model AuditLog {
+  id       String   @id @default(uuid())
+  userId   String   @map("user_id")
+  accion   String // "CREAR" | "EDITAR" | "ELIMINAR" | "CAMBIAR_ROL"
+  entidad  String // "usuario" | "noticia" | "termino_glosario" | "documento_biblioteca" | "hilo_foro" | ...
+  detalle  String?
+  fecha    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
+
+// ============================================================
+// FASE 8 — GAMIFICACIÓN (insignias)
+// ============================================================
+
+model Badge {
+  id          String   @id
+  nombre      String
+  descripcion String
+  icono       String // nombre de icono lucide-react
+  criterio    String // descripción legible del criterio de desbloqueo
+
+  otorgadas BadgeEarned[]
+
+  @@map("badges")
+}
+
+model BadgeEarned {
+  id      String   @id @default(uuid())
+  userId  String   @map("user_id")
+  badgeId String   @map("badge_id")
+  fecha   DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("badges_earned")
+}
+
+// ============================================================
+// FASE 8 — FORO ACADÉMICO
+// ============================================================
+
+enum CategoriaForo {
+  GENERAL
+  PROTECCION_DATOS
+  DELITOS_INFORMATICOS
+  COMERCIO_ELECTRONICO
+  ETICA_DIGITAL
+  DUDAS_MODULOS
+}
+
+model ForumThread {
+  id        String        @id @default(uuid())
+  titulo    String
+  categoria CategoriaForo @default(GENERAL)
+  autorId   String        @map("autor_id")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  autor User        @relation(fields: [autorId], references: [id], onDelete: Cascade)
+  posts ForumPost[]
+
+  @@map("forum_threads")
+}
+
+model ForumPost {
+  id        String   @id @default(uuid())
+  threadId  String   @map("thread_id")
+  autorId   String   @map("autor_id")
+  contenido String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  thread     ForumThread     @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  autor      User            @relation(fields: [autorId], references: [id], onDelete: Cascade)
+  reacciones ForumReaction[]
+
+  @@map("forum_posts")
+}
+
+model ForumReaction {
+  id     String @id @default(uuid())
+  postId String @map("post_id")
+  userId String @map("user_id")
+
+  post ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("forum_reactions")
+}
+
+// ============================================================
+// FASE 8 — GLOSARIO JURÍDICO
+// ============================================================
+
+model GlossaryTerm {
+  id         String @id @default(uuid())
+  termino    String
+  definicion String @db.Text
+  categoria  String
+  orden      Int
+
+  @@map("glossary_terms")
+}
+
+// ============================================================
+// FASE 8 — NOTICIAS
+// ============================================================
+
+model News {
+  id                String   @id @default(uuid())
+  titulo            String
+  resumen           String
+  contenido         String   @db.Text
+  fuente            String
+  fechaPublicacion  DateTime @map("fecha_publicacion")
+
+  @@map("news")
+}
+
+// ============================================================
+// FASE 6 — CASOS PRÁCTICOS
+// ============================================================
+
+enum NivelDificultad {
+  BASICO
+  INTERMEDIO
+  AVANZADO
+}
+
+enum CategoriaCaso {
+  PROTECCION_DATOS
+  DELITOS_INFORMATICOS
+  COMERCIO_ELECTRONICO
+  EVIDENCIA_DIGITAL
+}
+
+model CaseStudy {
+  id                       String          @id @default(uuid())
+  titulo                   String
+  categoria                CategoriaCaso
+  escenario                String          @db.Text
+  descripcion              String          @db.Text
+  normativaAplicable       String          @db.Text @map("normativa_aplicable")
+  derechosVulnerados       String          @db.Text @map("derechos_vulnerados")
+  sanciones                String          @db.Text
+  actuacionCorrecta        String          @db.Text @map("actuacion_correcta")
+  retroalimentacionJuridica String         @db.Text @map("retroalimentacion_juridica")
+  nivelDificultad          NivelDificultad @map("nivel_dificultad")
+  competenciaDesarrollada  String          @map("competencia_desarrollada")
+  opciones                 Json // alternativas de decisión que ve el estudiante
+  indiceCorrecto           Int             @map("indice_correcto") // nunca se envía al cliente antes de resolver
+  orden                    Int
+
+  intentos CaseAttempt[]
+
+  @@map("case_studies")
+}
+
+model CaseAttempt {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  caseStudyId String   @map("case_study_id")
+  correcta    Boolean
+  fecha       DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caseStudy CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  @@map("case_attempts")
+}
+
+// ============================================================
+// FASE 6 — AUTOEVALUACIÓN DE COMPETENCIAS DIGITALES
+// ============================================================
+
+enum EjeCompetencia {
+  SEGURIDAD_DIGITAL
+  PROTECCION_DATOS
+  ASPECTOS_LEGALES
+  ETICA
+  CIUDADANIA_DIGITAL
+  USO_RESPONSABLE_INFORMACION
+}
+
+enum TipoDiagnostico {
+  INICIAL
+  FINAL
+}
+
+model SelfAssessmentQuestion {
+  id        String         @id @default(uuid())
+  eje       EjeCompetencia
+  enunciado String
+  orden     Int
+
+  respuestas SelfAssessmentResponse[]
+
+  @@map("self_assessment_questions")
+}
+
+model SelfAssessmentResponse {
+  id         String          @id @default(uuid())
+  userId     String          @map("user_id")
+  questionId String          @map("question_id")
+  tipo       TipoDiagnostico
+  valor      Int // escala Likert 1-5
+  fecha      DateTime        @default(now())
+
+  user     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question SelfAssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId, tipo])
+  @@map("self_assessment_responses")
+}
+
+// ============================================================
+// FASE 5 — EVALUACIONES
+// ============================================================
+
+enum TipoPregunta {
+  VF
+  OPCION_MULTIPLE
+  RELACIONAR
+  COMPLETAR
+  CASO
+}
+
+model Evaluation {
+  id           String   @id @default(uuid())
+  courseId     String?  @map("course_id") // módulo educativo al que pertenece (opcional)
+  titulo       String
+  tipo         String   @default("modulo") // "modulo" | "diagnostica" | "final" (extensible)
+  tiempoLimite Int      @default(0) @map("tiempo_limite") // minutos, 0 = sin límite
+  orden        Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  course    Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  preguntas Question[]
+  intentos  QuizAttempt[]
+
+  @@map("evaluations")
+}
+
+model Question {
+  id                 String       @id @default(uuid())
+  evaluationId       String       @map("evaluation_id")
+  tipo               TipoPregunta
+  enunciado          String       @db.Text
+  opciones           Json? // estructura depende del tipo de pregunta
+  respuestaCorrecta  Json         @map("respuesta_correcta") // NUNCA se envía al cliente al tomar el examen
+  retroalimentacion  String       @db.Text
+  puntaje            Int          @default(1)
+  orden              Int
+
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@map("questions")
+}
+
+model QuizAttempt {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  evaluationId  String   @map("evaluation_id")
+  puntaje       Int // porcentaje 0-100
+  aprobado      Boolean  @default(false)
+  respuestas    Json // respuestas del estudiante + corrección, para retroalimentación
+  fecha         DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_attempts")
+}
+
+// ============================================================
+// FASE 4 — BIBLIOTECA DIGITAL Y BUSCADOR INTELIGENTE
+// ============================================================
+
+enum CategoriaDocumento {
+  CONSTITUCION
+  LOPDP
+  COIP
+  COMERCIO_ELECTRONICO
+  REGLAMENTO
+  NORMATIVA
+}
+
+model LibraryDocument {
+  id          String             @id @default(uuid())
+  titulo      String
+  categoria   CategoriaDocumento
+  archivoUrl  String?            @map("archivo_url")
+  tags        String[]
+  contenido   String             @db.Text // texto indexable para el buscador (resumen/extracto)
+  descargas   Int                @default(0)
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  articulos   LibraryArticle[]
+  favoritos   Favorite[]
+
+  @@map("library_documents")
+}
+
+model LibraryArticle {
+  id          String   @id @default(uuid())
+  documentId  String   @map("document_id")
+  numero      String   // ej. "Art. 66", "Art. 9"
+  titulo      String
+  texto       String   @db.Text
+  orden       Int
+
+  document    LibraryDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("library_articles")
+}
+
+model Favorite {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  documentId  String   @map("document_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document LibraryDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentId])
+  @@map("favorites")
+}
+
+// ============================================================
+// FASE 3 — MÓDULOS EDUCATIVOS
+// ============================================================
+
+enum TipoLeccion {
+  VIDEO
+  PDF
+  INFOGRAFIA
+  TEXTO
+  PODCAST
+  LINEA_TIEMPO
+  MAPA_CONCEPTUAL
+  PRESENTACION
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  numero      Int      @unique // 1 a 8, orden oficial de los módulos
+  titulo      String
+  descripcion String
+  resumen     String   @db.Text
+  bibliografia String  @db.Text
+  propositoAcademico String @db.Text
+  orden       Int
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  lessons     Lesson[]
+  enrollments Enrollment[]
+  evaluations Evaluation[]
+  tareasTutoria TutoringTask[]
+
+  @@map("courses")
+}
+
+model Lesson {
+  id         String      @id @default(uuid())
+  courseId   String      @map("course_id")
+  tipo       TipoLeccion
+  titulo     String
+  urlRecurso String?     @map("url_recurso")
+  contenido  String?     @db.Text // usado por lecciones de tipo TEXTO
+  orden      Int
+
+  course     Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress   LessonProgress[]
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  courseId    String   @map("course_id")
+  progreso    Int      @default(0) // porcentaje 0-100
+  fechaInicio DateTime @default(now()) @map("fecha_inicio")
+  completado  Boolean  @default(false)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  lessonId    String   @map("lesson_id")
+  completado  Boolean  @default(false)
+  fecha       DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progress")
+}
+
+// ============================================================
+// MÓDULO DE TUTORÍA DOCENTE-ESTUDIANTE
+// ============================================================
+
+enum EstadoTutoria {
+  PENDIENTE
+  ACTIVA
+  RECHAZADA
+  FINALIZADA
+  CANCELADA
+}
+
+enum EstadoTarea {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADA
+  VENCIDA
+}
+
+enum PrioridadTarea {
+  BAJA
+  MEDIA
+  ALTA
+}
+
+enum EstadoObjetivo {
+  NO_INICIADO
+  EN_PROGRESO
+  COMPLETADO
+  CANCELADO
+}
+
+enum TipoObservacion {
+  SEGUIMIENTO
+  ACUERDO
+  RECOMENDACION
+  DIFICULTAD
+  AVANCE
+}
+
+enum EstadoReunion {
+  PROGRAMADA
+  REALIZADA
+  CANCELADA
+  REPROGRAMADA
+}
+
+model TutoringAssignment {
+  id                String        @id @default(uuid())
+  docenteId         String        @map("docente_id")
+  estudianteId      String        @map("estudiante_id")
+  estado            EstadoTutoria @default(PENDIENTE)
+  fechaSolicitud    DateTime      @default(now()) @map("fecha_solicitud")
+  fechaAsignacion   DateTime?     @map("fecha_asignacion")
+  fechaFinalizacion DateTime?     @map("fecha_finalizacion")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  docente    User @relation("DocenteDe", fields: [docenteId], references: [id], onDelete: Cascade)
+  estudiante User @relation("EstudianteDe", fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  tareas        TutoringTask[]
+  objetivos     TutoringObjective[]
+  observaciones TutoringObservation[]
+  reuniones     TutoringMeeting[]
+  recursos      TutoringResource[]
+
+  // Un mismo docente no puede tener dos solicitudes/relaciones con el mismo
+  // estudiante (evita duplicados). La regla de "un estudiante no puede tener
+  // dos tutorías ACTIVAS de docentes distintos" se valida en el dominio,
+  // porque Prisma no puede expresar unicidad condicionada por estado.
+  @@unique([docenteId, estudianteId])
+  @@index([estudianteId, estado])
+  @@map("tutoring_assignments")
+}
+
+model TutoringTask {
+  id           String         @id @default(uuid())
+  assignmentId String         @map("assignment_id")
+  courseId     String?        @map("course_id")
+  titulo       String
+  descripcion  String         @db.Text
+  fechaLimite  DateTime       @map("fecha_limite")
+  prioridad    PrioridadTarea @default(MEDIA)
+  estado       EstadoTarea    @default(PENDIENTE)
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  course     Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@map("tutoring_tasks")
+}
+
+model TutoringObjective {
+  id            String         @id @default(uuid())
+  assignmentId  String         @map("assignment_id")
+  titulo        String
+  descripcion   String         @db.Text
+  progreso      Int            @default(0)
+  estado        EstadoObjetivo @default(NO_INICIADO)
+  fechaObjetivo DateTime       @map("fecha_objetivo")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@map("tutoring_objectives")
+}
+
+model TutoringObservation {
+  id           String          @id @default(uuid())
+  assignmentId String          @map("assignment_id")
+  autorId      String          @map("autor_id")
+  tipo         TipoObservacion
+  contenido    String          @db.Text
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  autor      User               @relation(fields: [autorId], references: [id], onDelete: Cascade)
+
+  @@map("tutoring_observations")
+}
+
+model TutoringMeeting {
+  id           String        @id @default(uuid())
+  assignmentId String        @map("assignment_id")
+  titulo       String
+  descripcion  String        @db.Text
+  fecha        DateTime
+  duracionMin  Int           @map("duracion_min")
+  estado       EstadoReunion @default(PROGRAMADA)
+  acuerdos     String?       @db.Text
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@map("tutoring_meetings")
+}
+
+model TutoringResource {
+  id           String   @id @default(uuid())
+  assignmentId String   @map("assignment_id")
+  titulo       String
+  url          String
+  descripcion  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@map("tutoring_resources")
+}

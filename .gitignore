@@ -1,0 +1,10 @@
+# El detalle específico de la app vive en apps/web/.gitignore
+# (node_modules, .next, .env, .env.local, etc.). Este archivo cubre
+# la raíz del monorepo.
+
+node_modules/
+.DS_Store
+*.log
+
+# Carpeta de configuración local de la Vercel CLI (no debe compartirse)
+.vercel/
