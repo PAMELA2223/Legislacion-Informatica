@@ -2,11 +2,14 @@ import type { Rol } from "@prisma/client";
 import type {
   AdminCaseStudyRow,
   AdminCourseRow,
+  AdminEvaluationDetalle,
   AdminEvaluationRow,
   AdminForumThreadRow,
   AdminGlossaryRow,
   AdminLibraryRow,
   AdminNewsRow,
+  AdminNuevaPregunta,
+  AdminNuevoCaso,
   AdminUserRow,
   AuditLogEntry,
 } from "./admin.entity";
@@ -42,11 +45,20 @@ export interface IAdminRepository {
   ): Promise<void>;
   eliminarDocumentoBiblioteca(actorId: string, id: string): Promise<void>;
 
-  // Cursos, evaluaciones y casos (solo lectura + eliminación)
+  // Cursos, evaluaciones y casos
   listarCursos(): Promise<AdminCourseRow[]>;
   listarEvaluaciones(): Promise<AdminEvaluationRow[]>;
+  crearEvaluacion(
+    actorId: string,
+    data: { titulo: string; courseId?: string; tiempoLimite: number }
+  ): Promise<{ id: string }>;
+  obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetalle | null>;
+  crearPregunta(actorId: string, evaluationId: string, data: AdminNuevaPregunta): Promise<void>;
+  eliminarPregunta(actorId: string, id: string): Promise<void>;
   eliminarEvaluacion(actorId: string, id: string): Promise<void>;
+
   listarCasos(): Promise<AdminCaseStudyRow[]>;
+  crearCaso(actorId: string, data: AdminNuevoCaso): Promise<void>;
   eliminarCaso(actorId: string, id: string): Promise<void>;
 
   // Foro (moderación)

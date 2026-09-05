@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { getAuthenticatedUser } from "@/lib/get-authenticated-user";
 import { prisma } from "@/lib/prisma";
 import { PrismaAdminRepository } from "@/modules/admin/infrastructure/prisma-admin.repository";
 import { ListarEvaluacionesAdminUseCase } from "@/modules/admin/application/admin.use-cases";
 import { DeleteButton } from "@/modules/admin/presentation/delete-button";
+import { Button } from "@/components/ui/button";
 
 export default async function AdminEvaluacionesPage() {
   const user = await getAuthenticatedUser();
@@ -14,22 +17,25 @@ export default async function AdminEvaluacionesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-1">Evaluaciones</h1>
-      <p className="text-sm text-muted-foreground mb-8">
-        La creación del banco de preguntas se gestiona por ahora vía el seed o
-        Prisma Studio, dada la estructura de opciones/respuestas por tipo de
-        pregunta. Aquí puedes ver el uso y eliminar evaluaciones obsoletas.
-      </p>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold text-foreground">Evaluaciones</h1>
+        <Link href="/admin/evaluaciones/nueva">
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva evaluación
+          </Button>
+        </Link>
+      </div>
 
       <div className="flex flex-col gap-2">
         {evaluaciones.map((e) => (
           <div key={e.id} className="rounded-xl border border-border bg-surface p-4 flex items-center justify-between">
-            <div>
-              <p className="font-medium text-foreground">{e.titulo}</p>
+            <Link href={`/admin/evaluaciones/${e.id}`} className="flex-1">
+              <p className="font-medium text-foreground hover:text-primary transition-colors">{e.titulo}</p>
               <p className="text-xs text-muted-foreground">
                 {e.totalPreguntas} pregunta(s) · {e.totalIntentos} intento(s) registrados
               </p>
-            </div>
+            </Link>
             <DeleteButton
               url={`/api/admin/evaluaciones/${e.id}`}
               confirmMessage={`¿Eliminar la evaluación "${e.titulo}"? Se perderán sus preguntas e intentos.`}

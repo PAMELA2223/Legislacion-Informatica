@@ -5,11 +5,14 @@ import type { IAdminRepository } from "../domain/admin-repository.interface";
 import type {
   AdminCaseStudyRow,
   AdminCourseRow,
+  AdminEvaluationDetalle,
   AdminEvaluationRow,
   AdminForumThreadRow,
   AdminGlossaryRow,
   AdminLibraryRow,
   AdminNewsRow,
+  AdminNuevaPregunta,
+  AdminNuevoCaso,
   AdminUserRow,
   AuditLogEntry,
 } from "../domain/admin.entity";
@@ -196,6 +199,65 @@ export class PrismaAdminRepository implements IAdminRepository {
     }));
   }
 
+  async crearEvaluacion(
+    actorId: string,
+    data: { titulo: string; courseId?: string; tiempoLimite: number }
+  ): Promise<{ id: string }> {
+    const evaluacion = await this.prisma.evaluation.create({
+      data: {
+        titulo: data.titulo,
+        courseId: data.courseId || undefined,
+        tiempoLimite: data.tiempoLimite,
+        orden: 1,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "evaluacion", data.titulo);
+    return { id: evaluacion.id };
+  }
+
+  async obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetalle | null> {
+    const evaluacion = await this.prisma.evaluation.findUnique({
+      where: { id },
+      include: { preguntas: { orderBy: { orden: "asc" } } },
+    });
+    if (!evaluacion) return null;
+    return {
+      id: evaluacion.id,
+      titulo: evaluacion.titulo,
+      courseId: evaluacion.courseId,
+      tiempoLimite: evaluacion.tiempoLimite,
+      preguntas: evaluacion.preguntas.map((p) => ({
+        id: p.id,
+        tipo: p.tipo,
+        enunciado: p.enunciado,
+        puntaje: p.puntaje,
+        orden: p.orden,
+      })),
+    };
+  }
+
+  async crearPregunta(actorId: string, evaluationId: string, data: AdminNuevaPregunta): Promise<void> {
+    const totalActual = await this.prisma.question.count({ where: { evaluationId } });
+    await this.prisma.question.create({
+      data: {
+        evaluationId,
+        tipo: data.tipo,
+        enunciado: data.enunciado,
+        opciones: data.opciones as never,
+        respuestaCorrecta: data.respuestaCorrecta as never,
+        retroalimentacion: data.retroalimentacion,
+        puntaje: data.puntaje,
+        orden: totalActual + 1,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "pregunta", `Evaluación ${evaluationId}`);
+  }
+
+  async eliminarPregunta(actorId: string, id: string): Promise<void> {
+    await this.prisma.question.delete({ where: { id } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "pregunta", id);
+  }
+
   async eliminarEvaluacion(actorId: string, id: string): Promise<void> {
     await this.prisma.evaluation.delete({ where: { id } });
     await registrarLog(this.prisma, actorId, "ELIMINAR", "evaluacion", id);
@@ -211,6 +273,29 @@ export class PrismaAdminRepository implements IAdminRepository {
       categoria: c.categoria,
       totalIntentos: c._count.intentos,
     }));
+  }
+
+  async crearCaso(actorId: string, data: AdminNuevoCaso): Promise<void> {
+    const totalActual = await this.prisma.caseStudy.count();
+    await this.prisma.caseStudy.create({
+      data: {
+        titulo: data.titulo,
+        categoria: data.categoria as never,
+        escenario: data.escenario,
+        descripcion: data.descripcion,
+        normativaAplicable: data.normativaAplicable,
+        derechosVulnerados: data.derechosVulnerados,
+        sanciones: data.sanciones,
+        actuacionCorrecta: data.actuacionCorrecta,
+        retroalimentacionJuridica: data.retroalimentacionJuridica,
+        nivelDificultad: data.nivelDificultad as never,
+        competenciaDesarrollada: data.competenciaDesarrollada,
+        opciones: { alternativas: data.alternativas } as never,
+        indiceCorrecto: data.indiceCorrecto,
+        orden: totalActual + 1,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "caso_practico", data.titulo);
   }
 
   async eliminarCaso(actorId: string, id: string): Promise<void> {

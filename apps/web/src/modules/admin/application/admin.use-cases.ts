@@ -1,6 +1,6 @@
 import type { Rol } from "@prisma/client";
 import type { IAdminRepository } from "../domain/admin-repository.interface";
-import type { AdminGlossaryRow, AdminNewsRow } from "../domain/admin.entity";
+import type { AdminGlossaryRow, AdminNewsRow, AdminNuevaPregunta, AdminNuevoCaso } from "../domain/admin.entity";
 
 export class ListarUsuariosUseCase {
   constructor(private readonly repo: IAdminRepository) {}
@@ -136,6 +136,39 @@ export class ListarEvaluacionesAdminUseCase {
   }
 }
 
+export class CrearEvaluacionUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, data: { titulo: string; courseId?: string; tiempoLimite: number }) {
+    if (!data.titulo?.trim()) throw new Error("El título es obligatorio.");
+    return this.repo.crearEvaluacion(actorId, data);
+  }
+}
+
+export class ObtenerEvaluacionConPreguntasUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(id: string) {
+    const evaluacion = await this.repo.obtenerEvaluacionConPreguntas(id);
+    if (!evaluacion) throw new Error("Evaluación no encontrada.");
+    return evaluacion;
+  }
+}
+
+export class CrearPreguntaUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, evaluationId: string, data: AdminNuevaPregunta) {
+    if (!data.enunciado?.trim()) throw new Error("El enunciado es obligatorio.");
+    if (!data.retroalimentacion?.trim()) throw new Error("La retroalimentación es obligatoria.");
+    return this.repo.crearPregunta(actorId, evaluationId, data);
+  }
+}
+
+export class EliminarPreguntaUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string) {
+    return this.repo.eliminarPregunta(actorId, id);
+  }
+}
+
 export class EliminarEvaluacionUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute(actorId: string, id: string) {
@@ -147,6 +180,17 @@ export class ListarCasosAdminUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute() {
     return this.repo.listarCasos();
+  }
+}
+
+export class CrearCasoUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, data: AdminNuevoCaso) {
+    if (!data.titulo?.trim()) throw new Error("El título es obligatorio.");
+    if (data.alternativas.filter((a) => a.trim()).length < 2) {
+      throw new Error("Debes ingresar al menos 2 alternativas.");
+    }
+    return this.repo.crearCaso(actorId, data);
   }
 }
 
