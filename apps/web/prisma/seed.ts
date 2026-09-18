@@ -110,6 +110,45 @@ const MODULOS = [
     bibliografia:
       "Corte Nacional de Justicia del Ecuador. Repositorio de sentencias en materia informática.",
   },
+  {
+    numero: 9,
+    slug: "seguridad-de-la-informacion",
+    titulo: "Seguridad de la Información",
+    descripcion:
+      "Concepto de seguridad de la información, principios de confidencialidad, integridad y disponibilidad, gestión de riesgos y buenas prácticas de protección.",
+    resumen:
+      "Introduce el marco conceptual de la seguridad de la información —anterior y más amplio que la ciberseguridad— como base para proteger cualquier tipo de información, digital o no, frente a amenazas comunes.",
+    propositoAcademico:
+      "Que el estudiante comprenda los principios CID (confidencialidad, integridad, disponibilidad), identifique amenazas comunes a la información y aplique buenas prácticas básicas de gestión de riesgos.",
+    bibliografia:
+      "ISO/IEC 27001 — Sistemas de gestión de seguridad de la información (referencia comparada).\nMINTEL Ecuador. Esquema Gubernamental de Seguridad de la Información (EGSI).",
+  },
+  {
+    numero: 10,
+    slug: "ciberseguridad",
+    titulo: "Ciberseguridad",
+    descripcion:
+      "Amenazas informáticas, malware, phishing, robo de información, seguridad de contraseñas, autenticación, protección de dispositivos y de redes.",
+    resumen:
+      "Profundiza en la seguridad aplicada específicamente al entorno digital: cómo reconocer amenazas comunes y aplicar buenas prácticas de protección personal, sin contenido sensacionalista.",
+    propositoAcademico:
+      "Que el estudiante identifique amenazas informáticas frecuentes (malware, phishing) y aplique medidas prácticas de autoprotección: contraseñas seguras, autenticación multifactor y buenas prácticas en redes.",
+    bibliografia:
+      "INCIBE (Instituto Nacional de Ciberseguridad de España). Recursos de concienciación #AprendeCiberseguridad.\nMINTEL Ecuador. Agenda de Transformación Digital — eje de ciberseguridad.",
+  },
+  {
+    numero: 11,
+    slug: "derechos-y-obligaciones-usuarios-digitales",
+    titulo: "Derechos y Obligaciones de los Usuarios Digitales",
+    descripcion:
+      "Derechos de los usuarios digitales, protección de datos personales, privacidad, acceso a servicios digitales, responsabilidades del usuario y consecuencias jurídicas del uso indebido de recursos digitales.",
+    resumen:
+      "Conecta cada derecho digital con la obligación correlativa y la normativa aplicable, para que el estudiante entienda tanto lo que puede exigir como lo que debe cumplir al usar tecnología.",
+    propositoAcademico:
+      "Que el estudiante distinga derechos digitales (privacidad, acceso, protección de datos) de las obligaciones y responsabilidades que conlleva el uso de sistemas informáticos, y comprenda las consecuencias jurídicas de su incumplimiento.",
+    bibliografia:
+      "Constitución de la República del Ecuador (2008), artículos 66 y 92.\nLey Orgánica de Protección de Datos Personales (Ecuador, 2021).\nCódigo Orgánico Integral Penal (COIP) — disposiciones sobre uso indebido de sistemas informáticos.",
+  },
 ];
 
 // Cada módulo recibe el mismo esqueleto de recursos (video, PDF, infografía,
@@ -125,6 +164,197 @@ function leccionesPara(tituloModulo: string) {
 }
 
 // ============================================================
+// AMPLIACIÓN — Lecciones de texto reales para los módulos 9, 10 y 11
+// (Secciones 2.1, 2.2 y 2.3 del pedido de ampliación). A diferencia de
+// leccionesPara() —que genera solo el esqueleto de recursos pendientes de
+// redacción editorial— estos tres módulos son contenido nuevo pedido
+// explícitamente, así que llevan lecciones de texto con contenido real,
+// educativo y no sensacionalista, cubriendo cada subtema solicitado.
+// ============================================================
+
+const LECCIONES_SEGURIDAD_INFORMACION = [
+  {
+    tipo: "TEXTO" as const,
+    titulo: "¿Qué es la seguridad de la información?",
+    orden: 1,
+    contenido:
+      "La seguridad de la información es la disciplina que protege cualquier tipo de información —digital, impresa o hablada— frente a accesos, usos, divulgaciones, interrupciones o destrucciones no autorizadas. Es un concepto más amplio que la ciberseguridad: mientras esta última se enfoca en el entorno digital, la seguridad de la información abarca también documentos físicos, conversaciones y procesos organizacionales.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Principios de confidencialidad, integridad y disponibilidad (CID)",
+    orden: 2,
+    contenido:
+      "Todo esquema de seguridad de la información se apoya en tres principios conocidos como la tríada CID. Confidencialidad: solo las personas autorizadas pueden acceder a la información. Integridad: la información no puede ser modificada de forma no autorizada ni corrompida sin detectarse. Disponibilidad: la información y los sistemas que la contienen deben estar accesibles cuando se los necesita legítimamente.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Gestión de riesgos de la información",
+    orden: 3,
+    contenido:
+      "Gestionar riesgos de información implica identificar qué activos de información existen, qué amenazas podrían afectarlos, qué tan vulnerables son y qué impacto tendría que la amenaza se concrete. A partir de ese análisis se decide si el riesgo se evita, se reduce con controles, se transfiere (por ejemplo mediante un seguro) o se acepta conscientemente, siempre documentando la decisión.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Amenazas comunes a la información",
+    orden: 4,
+    contenido:
+      "Entre las amenazas más frecuentes están el error humano (por ejemplo, enviar información a un destinatario equivocado), la pérdida o robo de dispositivos con información sensible, el acceso no autorizado por terceros, los desastres naturales que afectan la infraestructura, y fallas técnicas de hardware o software que provocan pérdida de datos.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Buenas prácticas de protección de la información",
+    orden: 5,
+    contenido:
+      "Algunas prácticas básicas y ampliamente recomendadas incluyen: clasificar la información según su sensibilidad, limitar el acceso según el principio de necesidad de conocer, mantener copias de respaldo (backups) periódicas, cifrar información sensible tanto en tránsito como almacenada, y capacitar continuamente a las personas que manejan información crítica.",
+  },
+];
+
+const LECCIONES_CIBERSEGURIDAD = [
+  {
+    tipo: "TEXTO" as const,
+    titulo: "¿Qué es la ciberseguridad?",
+    orden: 1,
+    contenido:
+      "La ciberseguridad es la rama de la seguridad de la información enfocada específicamente en proteger sistemas, redes, dispositivos y datos frente a amenazas que se originan o se propagan a través del entorno digital. Comparte los principios de confidencialidad, integridad y disponibilidad, pero los aplica a un contexto tecnológico concreto: computadoras, celulares, redes y servicios en línea.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Amenazas informáticas y malware",
+    orden: 2,
+    contenido:
+      "El malware (software malicioso) es un término general para programas diseñados para dañar, espiar o tomar control no autorizado de un dispositivo. Incluye virus, que se propagan infectando archivos; ransomware, que cifra la información y exige un pago para liberarla; y spyware, que recopila información del usuario sin su consentimiento. Estas amenazas suelen ingresar mediante archivos adjuntos, descargas o enlaces engañosos.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Phishing y robo de información",
+    orden: 3,
+    contenido:
+      "El phishing es una técnica de ingeniería social en la que un atacante se hace pasar por una entidad confiable —un banco, una institución pública, un contacto conocido— para engañar a la víctima y que esta entregue información sensible como contraseñas o datos bancarios. Se distribuye principalmente por correo electrónico, pero también existen variantes por SMS (smishing) y por llamada telefónica (vishing). La recomendación general es nunca entregar contraseñas o códigos de verificación a través de un enlace recibido sin haber verificado la fuente por un canal oficial.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Seguridad de contraseñas y autenticación",
+    orden: 4,
+    contenido:
+      "Una contraseña segura es larga, única para cada servicio y no se basa en información fácil de adivinar (fechas, nombres). Reutilizar la misma contraseña en varios servicios es una de las prácticas más riesgosas, porque una sola filtración compromete todas las cuentas asociadas. La autenticación multifactor (MFA) añade una segunda verificación —un código temporal, una notificación en el celular— y reduce drásticamente el riesgo de acceso no autorizado, incluso si la contraseña es robada.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Protección de dispositivos y seguridad en redes",
+    orden: 5,
+    contenido:
+      "Mantener el sistema operativo y las aplicaciones actualizadas cierra vulnerabilidades conocidas que los atacantes suelen aprovechar. En cuanto a redes, conectarse a redes Wi-Fi públicas sin protección expone el tráfico a posibles interceptaciones; se recomienda evitar operaciones sensibles (banca, correos con información confidencial) en redes abiertas no confiables, y usar el cifrado disponible (WPA2/WPA3) en redes propias.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Buenas prácticas para usuarios",
+    orden: 6,
+    contenido:
+      "A nivel de usuario, algunas prácticas centrales son: verificar la fuente antes de hacer clic en un enlace o descargar un archivo, activar la autenticación multifactor cuando esté disponible, mantener copias de respaldo de la información importante, revisar periódicamente los permisos otorgados a aplicaciones, y reportar cualquier incidente sospechoso a la institución o canal correspondiente sin demora.",
+  },
+];
+
+const LECCIONES_DERECHOS_OBLIGACIONES = [
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Derechos de los usuarios digitales",
+    orden: 1,
+    contenido:
+      "Los usuarios digitales tienen derechos reconocidos tanto en la Constitución como en normativa específica: el derecho a la protección de sus datos personales (Art. 66.19 de la Constitución), el derecho de acceso a la información pública, el derecho a la privacidad de sus comunicaciones, y el derecho a acceder a servicios digitales sin discriminación arbitraria.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Protección de datos personales y privacidad",
+    orden: 2,
+    contenido:
+      "La Ley Orgánica de Protección de Datos Personales (LOPDP) reconoce al titular de los datos derechos como el acceso, la rectificación, la actualización, la eliminación y la oposición al tratamiento de su información. Ejercer estos derechos no requiere justificar una razón: basta con dirigir la solicitud al responsable del tratamiento, quien debe responder dentro de los plazos que fija la ley.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Acceso a servicios digitales",
+    orden: 3,
+    contenido:
+      "El acceso a servicios digitales —trámites en línea, educación virtual, comercio electrónico— es cada vez más una condición para ejercer otros derechos, lo que ha llevado a hablar de una \"brecha digital\" cuando ciertos grupos quedan excluidos de ese acceso. Las políticas públicas de transformación digital buscan reducir esa brecha, pero el usuario también tiene responsabilidades para usar esos servicios de forma segura y adecuada.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Responsabilidades y uso responsable de las tecnologías",
+    orden: 4,
+    contenido:
+      "Todo derecho digital viene acompañado de responsabilidades: usar la información y los sistemas de forma que no vulnere los derechos de terceros, no difundir contenido falso o difamatorio, respetar la propiedad intelectual ajena, y proteger razonablemente las propias credenciales y dispositivos para no facilitar accesos indebidos a través de ellos.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Obligaciones y consecuencias jurídicas del uso indebido",
+    orden: 5,
+    contenido:
+      "El uso indebido de sistemas informáticos —por ejemplo, el acceso no consentido a un sistema, la difusión no autorizada de datos personales de terceros o la suplantación de identidad digital— puede generar responsabilidad civil, administrativa e incluso penal, según lo tipificado en el Código Orgánico Integral Penal (COIP) y lo previsto en la LOPDP. Conocer estas consecuencias es parte de ejercer una ciudadanía digital informada.",
+  },
+];
+
+// ============================================================
+// AMPLIACIÓN — Contratos electrónicos y transacciones digitales
+// (Secciones 2.6 y 2.7 del pedido de ampliación). Se AGREGAN estas
+// lecciones de texto AL FINAL del esqueleto ya existente del curso
+// "Comercio Electrónico" (orden 6 en adelante) — no se toca ni se
+// reemplaza ninguna de las 5 lecciones que ya tenía (video, PDF,
+// infografía, ejemplos, podcast).
+// ============================================================
+
+const LECCIONES_AMPLIACION_COMERCIO_ELECTRONICO = [
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Contratos electrónicos: concepto y características",
+    orden: 6,
+    contenido:
+      "Un contrato electrónico es aquel en el que la oferta y la aceptación se manifiestan por medio de mensajes de datos, sin que las partes necesiten estar físicamente presentes ni usar papel. Sus características principales son: se perfecciona en un entorno digital, puede celebrarse entre personas distantes, y su prueba depende de mensajes de datos y registros electrónicos en lugar de documentos físicos firmados a mano.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Elementos y formación del contrato electrónico",
+    orden: 7,
+    contenido:
+      "Como cualquier contrato, el electrónico requiere consentimiento, objeto y causa lícitos. La particularidad está en el consentimiento: se manifiesta mediante clics, marcado de casillas o cualquier acción equivalente que exprese la voluntad de contratar, y el momento de perfeccionamiento suele fijarse cuando el oferente recibe la aceptación del destinatario, salvo que la ley o las partes dispongan otra cosa.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Validez jurídica y firma electrónica en los contratos",
+    orden: 8,
+    contenido:
+      "La Ley de Comercio Electrónico reconoce a los mensajes de datos el mismo valor jurídico que a los documentos escritos, y a la firma electrónica los mismos efectos que a una firma manuscrita. Esto significa que un contrato electrónico correctamente formado es tan exigible como uno en papel, siempre que se pueda demostrar la identidad de las partes y la integridad del contenido acordado.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Obligaciones de las partes, evidencia digital e incumplimiento",
+    orden: 9,
+    contenido:
+      "Cada parte de un contrato electrónico debe cumplir con lo pactado igual que en un contrato tradicional: entregar el bien o servicio, pagar el precio, respetar las condiciones informadas. Ante un incumplimiento, la evidencia digital —registros del sistema, correos de confirmación, huellas de auditoría (logs)— cumple el papel que cumpliría un documento firmado en un contrato en papel, por lo que conservar esos registros es clave para poder reclamar derechos.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Transacciones digitales: concepto, características y tipos",
+    orden: 10,
+    contenido:
+      "Una transacción digital es cualquier operación de intercambio de bienes, servicios o dinero realizada por medios electrónicos. Existen distintos tipos: comercio electrónico B2C (empresa a consumidor), B2B (entre empresas), C2C (entre particulares, como en marketplaces), y transferencias o pagos digitales entre cuentas bancarias o billeteras electrónicas. Todas comparten la característica de dejar un registro electrónico verificable de la operación.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Pagos digitales, seguridad y protección de datos en transacciones",
+    orden: 11,
+    contenido:
+      "Los pagos digitales —tarjetas, transferencias, billeteras electrónicas— dependen de que la información financiera del usuario esté protegida durante toda la operación. Esto exige cifrado de la comunicación, verificación de identidad y cumplimiento de normativa de protección de datos, ya que en cada transacción se procesan datos personales y financieros que la LOPDP considera de tratamiento especialmente cuidadoso.",
+  },
+  {
+    tipo: "TEXTO" as const,
+    titulo: "Riesgos, responsabilidades, evidencia y normativa aplicable",
+    orden: 12,
+    contenido:
+      "Entre los riesgos más comunes en transacciones digitales están el fraude con tarjetas, la suplantación de identidad y las plataformas fraudulentas que imitan tiendas legítimas. La responsabilidad ante estos riesgos se distribuye entre el usuario (verificar la fuente antes de pagar), el proveedor del servicio (implementar medidas de seguridad razonables) y, cuando corresponde, la entidad financiera. La Ley de Comercio Electrónico y la Ley Orgánica de Defensa del Consumidor son la normativa aplicable de referencia en Ecuador, y los comprobantes y registros electrónicos de la transacción constituyen la evidencia principal en caso de disputa.",
+  },
+];
+
+// ============================================================
 // FASE 4 — BIBLIOTECA JURÍDICA (documentos y artículos oficiales)
 // ============================================================
 
@@ -136,6 +366,13 @@ const DOCUMENTOS_BIBLIOTECA = [
     tags: ["derechos digitales", "privacidad", "acceso a la información"],
     contenido:
       "Norma suprema del Ecuador. Reconoce el derecho a la protección de datos personales, la inviolabilidad y el secreto de las comunicaciones, y el acceso a la información pública.",
+    numeroIdentificacion: "Registro Oficial 449",
+    pais: "Ecuador",
+    institucionEmisora: "Asamblea Constituyente",
+    fechaEmision: new Date("2008-10-20"),
+    estado: "VIGENTE" as const,
+    fuenteOficial: "Registro Oficial del Ecuador (gob.ec)",
+    enlaceOficial: "https://www.gob.ec/regulaciones/constitucion-republica-ecuador",
     articulos: [
       { numero: "Art. 66", titulo: "Derecho a la protección de datos personales", texto: "Se reconoce y garantizará a las personas el derecho a la protección de datos de carácter personal, que incluye el acceso y la decisión sobre información y datos de este carácter, así como su correspondiente protección." },
       { numero: "Art. 92", titulo: "Acción de hábeas data", texto: "Toda persona tiene derecho a conocer de la existencia y a acceder a los documentos, datos genéticos, bancos o archivos de datos personales e informes que sobre sí misma consten en entidades públicas o privadas." },
@@ -148,6 +385,13 @@ const DOCUMENTOS_BIBLIOTECA = [
     tags: ["protección de datos", "privacidad", "consentimiento"],
     contenido:
       "Regula el tratamiento de datos personales en Ecuador, estableciendo principios, derechos del titular y obligaciones del responsable del tratamiento.",
+    numeroIdentificacion: "Registro Oficial Suplemento 459",
+    pais: "Ecuador",
+    institucionEmisora: "Asamblea Nacional del Ecuador",
+    fechaEmision: new Date("2021-05-26"),
+    estado: "VIGENTE" as const,
+    fuenteOficial: "Registro Oficial del Ecuador (gob.ec)",
+    enlaceOficial: "https://www.gob.ec/regulaciones/ley-organica-proteccion-datos-personales",
     articulos: [
       { numero: "Art. 7", titulo: "Principio de consentimiento", texto: "El tratamiento de datos personales requiere el consentimiento libre, específico, informado e inequívoco del titular, salvo las excepciones previstas en la ley." },
       { numero: "Art. 16", titulo: "Derechos del titular", texto: "El titular de los datos tiene derecho de acceso, rectificación, actualización, eliminación, oposición, portabilidad y a no ser objeto de una decisión basada única y exclusivamente en un tratamiento automatizado." },
@@ -160,6 +404,13 @@ const DOCUMENTOS_BIBLIOTECA = [
     tags: ["delitos informáticos", "sanciones", "evidencia digital"],
     contenido:
       "Tipifica los delitos informáticos en el Ecuador: acceso no consentido, ataques a sistemas informáticos, apropiación fraudulenta y otros delitos relacionados con las TIC.",
+    numeroIdentificacion: "Registro Oficial Suplemento 180",
+    pais: "Ecuador",
+    institucionEmisora: "Asamblea Nacional del Ecuador",
+    fechaEmision: new Date("2014-02-10"),
+    estado: "VIGENTE" as const,
+    fuenteOficial: "Registro Oficial del Ecuador (gob.ec)",
+    enlaceOficial: "https://www.gob.ec/regulaciones/180-codigo-organico-integral-penal",
     articulos: [
       { numero: "Art. 229", titulo: "Revelación ilegal de bases de datos", texto: "La persona que revele información registrada, contenida en ficheros, archivos, bases de datos o medios semejantes, será sancionada." },
       { numero: "Art. 234", titulo: "Acceso no consentido a un sistema informático", texto: "Se sanciona a quien acceda de forma no consentida a todo o parte de un sistema informático o telemático." },
@@ -172,6 +423,13 @@ const DOCUMENTOS_BIBLIOTECA = [
     tags: ["comercio electrónico", "firma electrónica", "contratos"],
     contenido:
       "Regula los mensajes de datos, la firma electrónica, los servicios de certificación y la contratación electrónica en el Ecuador.",
+    numeroIdentificacion: "Registro Oficial Suplemento 557",
+    pais: "Ecuador",
+    institucionEmisora: "Congreso Nacional del Ecuador",
+    fechaEmision: new Date("2002-04-17"),
+    estado: "VIGENTE" as const,
+    fuenteOficial: "Registro Oficial del Ecuador (gob.ec)",
+    enlaceOficial: "https://www.gob.ec/regulaciones/ley-comercio-electronico-firmas-mensajes-datos",
     articulos: [
       { numero: "Art. 2", titulo: "Reconocimiento jurídico de los mensajes de datos", texto: "Los mensajes de datos tendrán igual valor jurídico que los documentos escritos." },
       { numero: "Art. 14", titulo: "Efectos jurídicos de la firma electrónica", texto: "La firma electrónica tendrá igual validez y se le reconocerán los mismos efectos jurídicos que a una firma manuscrita." },
@@ -565,6 +823,304 @@ async function seedNoticias() {
   console.log(`Seed completo: ${NOTICIAS.length} noticias cargadas.`);
 }
 
+// ============================================================
+// AMPLIACIÓN — PREGUNTAS FRECUENTES (FAQ)
+// ============================================================
+
+const PREGUNTAS_FAQ = [
+  {
+    categoria: "Derecho informático",
+    pregunta: "¿Qué es el derecho informático?",
+    respuesta:
+      "Es la rama del derecho que regula las relaciones jurídicas relacionadas con el uso de las tecnologías de la información: protección de datos, comercio electrónico, propiedad intelectual digital, delitos informáticos y evidencia digital, entre otros ámbitos.",
+  },
+  {
+    categoria: "Protección de datos",
+    pregunta: "¿Qué establece la Ley Orgánica de Protección de Datos Personales (LOPDP)?",
+    respuesta:
+      "Regula el tratamiento de datos personales en Ecuador: exige el consentimiento del titular, reconoce derechos como acceso, rectificación y eliminación, y establece obligaciones para quienes recopilan o procesan datos personales.",
+  },
+  {
+    categoria: "Protección de datos",
+    pregunta: "¿Qué es un dato personal?",
+    respuesta:
+      "Es cualquier información que identifica o hace identificable a una persona natural, como su nombre, cédula, correo electrónico, dirección IP o datos biométricos.",
+  },
+  {
+    categoria: "Ciberseguridad",
+    pregunta: "¿Cuál es la diferencia entre seguridad de la información y ciberseguridad?",
+    respuesta:
+      "La seguridad de la información protege la confidencialidad, integridad y disponibilidad de cualquier información, sin importar su formato (digital o físico). La ciberseguridad es una parte de esa disciplina, enfocada específicamente en proteger sistemas, redes y datos frente a amenazas del entorno digital.",
+  },
+  {
+    categoria: "Ciberseguridad",
+    pregunta: "¿Qué es el phishing?",
+    respuesta:
+      "Es una técnica de engaño en la que un atacante se hace pasar por una entidad confiable (un banco, una empresa, un contacto) para obtener información sensible como contraseñas o datos bancarios, generalmente a través de correos o mensajes fraudulentos.",
+  },
+  {
+    categoria: "Firma electrónica",
+    pregunta: "¿Una firma electrónica tiene la misma validez que una firma manuscrita?",
+    respuesta:
+      "Sí. Según la Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos, la firma electrónica tiene igual validez jurídica y los mismos efectos que una firma manuscrita, siempre que cumpla los requisitos legales establecidos.",
+  },
+  {
+    categoria: "Contratos electrónicos",
+    pregunta: "¿Un contrato firmado electrónicamente es legalmente vinculante en Ecuador?",
+    respuesta:
+      "Sí. Los mensajes de datos y los contratos electrónicos tienen el mismo valor jurídico que los documentos escritos, siempre que se pueda verificar el consentimiento de las partes y la integridad de la información.",
+  },
+  {
+    categoria: "Transacciones digitales",
+    pregunta: "¿Qué protección tiene un consumidor en una compra por comercio electrónico?",
+    respuesta:
+      "La normativa ecuatoriana reconoce derechos como la información clara y previa sobre el producto o servicio, y remite a la Ley Orgánica de Defensa del Consumidor y a la Ley de Comercio Electrónico para regular la validez de la transacción y la resolución de conflictos.",
+  },
+  {
+    categoria: "Derechos digitales",
+    pregunta: "¿Qué es la acción de hábeas data?",
+    respuesta:
+      "Es una garantía constitucional (Art. 92 de la Constitución) que permite a cualquier persona conocer, acceder, actualizar o eliminar la información que sobre ella conste en bases de datos públicas o privadas.",
+  },
+  {
+    categoria: "Normativa",
+    pregunta: "¿Qué normas conforman el marco legal informático en Ecuador?",
+    respuesta:
+      "Principalmente la Constitución de la República, la Ley Orgánica de Protección de Datos Personales (LOPDP), el Código Orgánico Integral Penal (COIP, en lo relativo a delitos informáticos) y la Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos.",
+  },
+];
+
+async function seedFaq() {
+  for (const [i, p] of PREGUNTAS_FAQ.entries()) {
+    await prisma.faqItem.upsert({
+      where: { id: `faq-${i + 1}` },
+      update: { ...p, orden: i + 1, publicado: true },
+      create: { id: `faq-${i + 1}`, ...p, orden: i + 1, publicado: true },
+    });
+  }
+  console.log(`Seed completo: ${PREGUNTAS_FAQ.length} preguntas frecuentes cargadas.`);
+}
+
+// ============================================================
+// AMPLIACIÓN — JURISPRUDENCIA INFORMÁTICA
+// ============================================================
+// IMPORTANTE: solo casos reales, verificados contra la fuente oficial.
+// No se inventan sentencias ni enlaces — cada caso aquí fue confirmado
+// contra el sitio oficial correspondiente antes de cargarse.
+
+const CASOS_JURISPRUDENCIA = [
+  {
+    nombreCaso: "Sentencia No. 2064-14-EP/21 (protección de datos personales e intimidad)",
+    pais: "Ecuador",
+    anio: 2021,
+    tema: "Protección de datos personales, hábeas data, intimidad digital",
+    resumen:
+      "La Corte Constitucional del Ecuador resolvió una acción extraordinaria de protección sobre la divulgación no consentida de fotografías íntimas, determinando que constituyen datos personales protegidos.",
+    problemaJuridico:
+      "Si el tratamiento no consentido de fotografías íntimas de una persona vulnera sus derechos a la protección de datos personales, la intimidad y la autodeterminación informativa, y si procede la acción de hábeas data en este contexto.",
+    decision:
+      "La Corte determinó que las fotografías íntimas constituyen datos personales y que su tratamiento sin consentimiento vulneró los derechos a la protección de datos, la imagen, la honra y la intimidad de la persona afectada.",
+    importancia:
+      "Es jurisprudencia vinculante en Ecuador sobre el alcance del concepto de dato personal, el consentimiento del titular y la expectativa razonable de privacidad en el entorno digital.",
+    fuenteOficial: "Corte Constitucional del Ecuador",
+    enlaceOficial: "https://www.corteconstitucional.gob.ec/sentencia-2064-14-ep-21/",
+    verificado: true,
+    publicado: true,
+  },
+  {
+    nombreCaso: "Google Spain, S.L. y Google Inc. contra AEPD y Mario Costeja González (\"derecho al olvido\")",
+    pais: "Unión Europea",
+    anio: 2014,
+    tema: "Derecho al olvido, protección de datos, motores de búsqueda",
+    resumen:
+      "El Tribunal de Justicia de la Unión Europea (TJUE) resolvió si un motor de búsqueda es responsable del tratamiento de datos personales que aparecen en páginas web de terceros indexadas por él.",
+    problemaJuridico:
+      "Si una persona puede solicitar a un motor de búsqueda la eliminación de enlaces a información personal legítima mas desactualizada o irrelevante, y si el gestor del buscador es responsable de ese tratamiento de datos.",
+    decision:
+      "El TJUE declaró que el gestor de un motor de búsqueda es responsable del tratamiento de datos personales indexados y que el titular puede solicitar, bajo ciertas condiciones, la eliminación de enlaces que le conciernen (\"derecho al olvido\").",
+    importancia:
+      "Es el precedente fundacional del derecho al olvido en materia de protección de datos, ampliamente citado en Ecuador y Latinoamérica para interpretar el alcance de los derechos digitales frente a intermediarios de internet.",
+    fuenteOficial: "EUR-Lex (base de datos oficial de legislación de la Unión Europea), Asunto C-131/12",
+    enlaceOficial: "https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:62012CJ0131",
+    verificado: true,
+    publicado: true,
+  },
+  {
+    nombreCaso: "Carpenter v. United States",
+    pais: "Estados Unidos",
+    anio: 2018,
+    tema: "Privacidad digital, datos de geolocalización, evidencia digital",
+    resumen:
+      "La Corte Suprema de los Estados Unidos resolvió si el gobierno necesita una orden judicial para obtener los registros históricos de ubicación de un teléfono celular (cell-site location information) en poder de un tercero (la operadora telefónica).",
+    problemaJuridico:
+      "Si la obtención sin orden judicial de datos de geolocalización de un celular, en poder de una empresa de telecomunicaciones, constituye una \"búsqueda\" protegida por la Cuarta Enmienda de la Constitución de EE.UU.",
+    decision:
+      "La Corte Suprema resolvió (5-4) que acceder a los registros históricos de geolocalización de un celular sí constituye una búsqueda bajo la Cuarta Enmienda, por lo que el gobierno generalmente necesita una orden judicial respaldada por causa probable.",
+    importancia:
+      "Es un precedente clave en evidencia digital y privacidad frente a terceros proveedores de servicios digitales, relevante para discutir los límites de la vigilancia estatal sobre datos generados por dispositivos móviles.",
+    fuenteOficial: "Corte Suprema de los Estados Unidos (Supreme Court of the United States)",
+    enlaceOficial: "https://www.supremecourt.gov/opinions/17pdf/585us1r62_mlho.pdf",
+    verificado: true,
+    publicado: true,
+  },
+];
+
+async function seedJurisprudencia() {
+  for (const [i, c] of CASOS_JURISPRUDENCIA.entries()) {
+    await prisma.jurisprudenceCase.upsert({
+      where: { id: `jurisprudencia-${i + 1}` },
+      update: c,
+      create: { id: `jurisprudencia-${i + 1}`, ...c },
+    });
+  }
+  console.log(`Seed completo: ${CASOS_JURISPRUDENCIA.length} casos de jurisprudencia cargados.`);
+}
+
+// ============================================================
+// AMPLIACIÓN — VIDEOS E INFOGRAFÍAS REALES
+// ============================================================
+// Solo recursos reales de fuentes institucionales/educativas — enlaces
+// verificados antes de cargarse, ninguno inventado.
+
+const VIDEOS = [
+  {
+    titulo: "¿Qué es el phishing? | #AprendeCiberseguridad",
+    descripcion:
+      "Explicación breve de qué es el phishing, cómo opera un atacante haciéndose pasar por una entidad legítima y cómo protegerse.",
+    categoria: "Ciberseguridad",
+    url: "https://www.youtube.com/watch?v=uhzV5-iFb5E",
+    fuente: "INCIBE (Instituto Nacional de Ciberseguridad de España)",
+    publicado: true,
+  },
+  {
+    titulo: "Phishing: caso real atendido por la Línea de Ayuda en Ciberseguridad 017",
+    descripcion:
+      "Caso real de smishing (phishing por SMS) consultado en la línea gratuita de ayuda en ciberseguridad de INCIBE.",
+    categoria: "Ciberseguridad",
+    url: "https://www.youtube.com/watch?v=7T32WBQRrBA",
+    fuente: "INCIBE (Instituto Nacional de Ciberseguridad de España)",
+    publicado: true,
+  },
+];
+
+async function seedVideos() {
+  for (const [i, v] of VIDEOS.entries()) {
+    await prisma.videoResource.upsert({
+      where: { id: `video-${i + 1}` },
+      update: v,
+      create: { id: `video-${i + 1}`, ...v },
+    });
+  }
+  console.log(`Seed completo: ${VIDEOS.length} videos cargados.`);
+}
+
+const INFOGRAFIAS = [
+  {
+    titulo: "Cómo identificar el phishing",
+    descripcion:
+      "Infografía con pistas visuales para reconocer un correo electrónico de phishing antes de caer en el engaño.",
+    categoria: "Ciberseguridad",
+    url: "https://www.incibe.es/sites/default/files/docs/c14-pdf-infografia-identificar_phishing.pdf",
+    fuente: "INCIBE (Instituto Nacional de Ciberseguridad de España)",
+    publicado: true,
+  },
+  {
+    titulo: "¿Cuáles son tus derechos de protección de datos?",
+    descripcion:
+      "Resumen visual de los derechos que otorga la normativa de protección de datos personales (acceso, rectificación, oposición, supresión, portabilidad, limitación).",
+    categoria: "Protección de datos",
+    url: "https://www.aepd.es/infografias/cuales-son-tus-derechos-de-proteccion-de-datos.pdf",
+    fuente: "AEPD (Agencia Española de Protección de Datos)",
+    publicado: true,
+  },
+];
+
+async function seedInfografias() {
+  for (const [i, inf] of INFOGRAFIAS.entries()) {
+    await prisma.infographic.upsert({
+      where: { id: `infografia-${i + 1}` },
+      update: inf,
+      create: { id: `infografia-${i + 1}`, ...inf },
+    });
+  }
+  console.log(`Seed completo: ${INFOGRAFIAS.length} infografías cargadas.`);
+}
+
+// ============================================================
+// AMPLIACIÓN — NORMATIVA Y REFERENCIAS INTERNACIONALES
+// ============================================================
+// Solo instrumentos internacionales reales, con enlace verificado a la
+// fuente oficial del organismo emisor — ninguno inventado.
+
+const REFERENCIAS_INTERNACIONALES = [
+  {
+    titulo: "Convenio sobre la Ciberdelincuencia (Convenio de Budapest)",
+    organismo: "Consejo de Europa",
+    tema: "Ciberseguridad, delitos informáticos, evidencia digital",
+    categoria: "Ciberseguridad",
+    resumen:
+      "Primer tratado internacional que busca armonizar las leyes nacionales contra el ciberdelito, mejorar las técnicas de investigación y facilitar la cooperación internacional en la obtención de evidencia electrónica. Es la base de la legislación contra la ciberdelincuencia en la mayoría de países que cuentan con ella.",
+    urlOficial: "https://www.coe.int/en/web/conventions/full-list/-/conventions/treaty/185",
+    publicado: true,
+  },
+  {
+    titulo: "Ley Modelo de la CNUDMI sobre Comercio Electrónico (1996)",
+    organismo: "CNUDMI / UNCITRAL (Comisión de las Naciones Unidas para el Derecho Mercantil Internacional)",
+    tema: "Comercio electrónico, mensajes de datos",
+    categoria: "Comercio electrónico",
+    resumen:
+      "Primer texto legislativo en adoptar los principios de no discriminación, neutralidad tecnológica y equivalencia funcional entre la información en papel y la información electrónica. Sirvió de base para la legislación de comercio electrónico de más de 100 países, incluyendo la Ley de Comercio Electrónico del Ecuador.",
+    urlOficial: "https://uncitral.un.org/en/texts/ecommerce/modellaw/electronic_commerce",
+    publicado: true,
+  },
+  {
+    titulo: "Ley Modelo de la CNUDMI sobre Firmas Electrónicas (2001)",
+    organismo: "CNUDMI / UNCITRAL (Comisión de las Naciones Unidas para el Derecho Mercantil Internacional)",
+    tema: "Firma electrónica",
+    categoria: "Firma electrónica",
+    resumen:
+      "Complementa la Ley Modelo sobre Comercio Electrónico estableciendo un enfoque neutral en cuanto a tecnología para reconocer la validez jurídica de las firmas electrónicas, sin favorecer una tecnología específica (permite tanto firmas basadas en criptografía como otras técnicas).",
+    urlOficial: "https://uncitral.un.org/en/texts/ecommerce/modellaw/electronic_signatures",
+    publicado: true,
+  },
+  {
+    titulo: "Reglamento General de Protección de Datos (RGPD) — Reglamento (UE) 2016/679",
+    organismo: "Unión Europea (Parlamento Europeo y Consejo)",
+    tema: "Protección de datos personales",
+    categoria: "Protección de datos",
+    resumen:
+      "Norma de referencia mundial en protección de datos personales, que unifica las reglas de tratamiento de datos en la Unión Europea y refuerza derechos como el acceso, la rectificación, la supresión y la portabilidad. Ha influido en la redacción de leyes de protección de datos en América Latina, incluida la LOPDP de Ecuador.",
+    urlOficial: "https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX%3A32016R0679",
+    publicado: true,
+  },
+];
+
+async function seedReferenciasInternacionales() {
+  for (const [i, r] of REFERENCIAS_INTERNACIONALES.entries()) {
+    await prisma.internationalReference.upsert({
+      where: { id: `referencia-${i + 1}` },
+      update: r,
+      create: { id: `referencia-${i + 1}`, ...r },
+    });
+  }
+  console.log(`Seed completo: ${REFERENCIAS_INTERNACIONALES.length} referencias internacionales cargadas.`);
+}
+
+// Módulos ampliados que llevan lecciones de texto reales en vez del
+// esqueleto genérico (ver LECCIONES_* arriba).
+const LECCIONES_POR_SLUG: Record<string, ReturnType<typeof leccionesPara>> = {
+  "seguridad-de-la-informacion": LECCIONES_SEGURIDAD_INFORMACION,
+  ciberseguridad: LECCIONES_CIBERSEGURIDAD,
+  "derechos-y-obligaciones-usuarios-digitales": LECCIONES_DERECHOS_OBLIGACIONES,
+};
+
+// Módulos existentes a los que se AGREGAN lecciones nuevas al final del
+// esqueleto ya generado por leccionesPara(), sin reemplazar las que ya
+// tenían (Secciones 2.6 y 2.7 del pedido de ampliación).
+const LECCIONES_ADICIONALES_POR_SLUG: Record<string, ReturnType<typeof leccionesPara>> = {
+  "comercio-electronico": LECCIONES_AMPLIACION_COMERCIO_ELECTRONICO,
+};
+
 async function main() {
   for (const modulo of MODULOS) {
     const curso = await prisma.course.upsert({
@@ -573,7 +1129,11 @@ async function main() {
       create: { ...modulo, orden: modulo.numero },
     });
 
-    for (const leccion of leccionesPara(modulo.titulo)) {
+    const lecciones = [
+      ...(LECCIONES_POR_SLUG[modulo.slug] ?? leccionesPara(modulo.titulo)),
+      ...(LECCIONES_ADICIONALES_POR_SLUG[modulo.slug] ?? []),
+    ];
+    for (const leccion of lecciones) {
       await prisma.lesson.upsert({
         where: { id: `${curso.id}-${leccion.orden}` }, // idempotencia simple para el seed
         update: leccion,
@@ -590,6 +1150,11 @@ async function main() {
   await seedInsignias();
   await seedGlosario();
   await seedNoticias();
+  await seedFaq();
+  await seedJurisprudencia();
+  await seedVideos();
+  await seedInfografias();
+  await seedReferenciasInternacionales();
 }
 
 main()

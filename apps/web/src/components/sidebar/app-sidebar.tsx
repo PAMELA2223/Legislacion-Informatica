@@ -28,6 +28,11 @@ import {
   ScrollText,
   Info,
   LogIn,
+  HelpCircle,
+  Gavel,
+  PlayCircle,
+  ImageIcon,
+  Globe2,
   type LucideIcon,
 } from "lucide-react";
 import type { Rol } from "@prisma/client";
@@ -59,6 +64,11 @@ const ICONOS: Record<string, LucideIcon> = {
   ScrollText,
   Info,
   LogIn,
+  HelpCircle,
+  Gavel,
+  PlayCircle,
+  ImageIcon,
+  Globe2,
 };
 
 function resolverIcono(nombre: string): LucideIcon {
@@ -67,7 +77,6 @@ function resolverIcono(nombre: string): LucideIcon {
 
 const ETIQUETAS_ROL: Record<string, string> = {
   ADMINISTRADOR: "Administrador",
-  DOCENTE: "Docente",
   ESTUDIANTE: "Estudiante",
   INVITADO: "Invitado",
 };

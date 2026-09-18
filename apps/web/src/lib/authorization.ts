@@ -20,7 +20,7 @@ export type { Rol };
 /** Los tres roles que tienen acceso al área autenticada de la plataforma. Un
  * INVITADO con sesión iniciada NO entra en esta lista: no tiene acceso al
  * área interna, solo a las páginas públicas (landing, login, registro). */
-export const ROLES_CON_ACCESO_A_PLATAFORMA: Rol[] = ["ADMINISTRADOR", "DOCENTE", "ESTUDIANTE"];
+export const ROLES_CON_ACCESO_A_PLATAFORMA: Rol[] = ["ADMINISTRADOR", "ESTUDIANTE"];
 
 export interface AuthContext {
   id: string;
@@ -56,8 +56,6 @@ export function rutaHomeDeRol(rol: Rol): string {
   switch (rol) {
     case "ADMINISTRADOR":
       return "/admin";
-    case "DOCENTE":
-      return "/docente";
     case "ESTUDIANTE":
       return "/dashboard";
     default:
@@ -77,7 +75,7 @@ export function tienePermiso(rol: Rol, rolesPermitidos: Rol[]): boolean {
  *
  * Uso:
  *   const ctx = await requireRole(["ADMINISTRADOR"]);
- *   const ctx = await requireRole(["ADMINISTRADOR", "DOCENTE"]);
+ *   const ctx = await requireRole(["ADMINISTRADOR"]);
  */
 export async function requireRole(rolesPermitidos: Rol[], rutaActual?: string): Promise<AuthContext> {
   const ctx = await getAuthContext();
@@ -96,7 +94,7 @@ export async function requireRole(rolesPermitidos: Rol[], rutaActual?: string): 
 
 /**
  * Igual que `requireRole`, pero solo exige sesión iniciada con un rol de la
- * plataforma (ADMINISTRADOR/DOCENTE/ESTUDIANTE) — bloquea únicamente a
+ * plataforma (ADMINISTRADOR/ESTUDIANTE) — bloquea únicamente a
  * INVITADO y a quien no tiene sesión. Pensado para el layout raíz del área
  * autenticada, donde la mayoría de páginas son válidas para los tres roles.
  */

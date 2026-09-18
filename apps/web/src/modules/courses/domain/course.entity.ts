@@ -24,7 +24,7 @@ export interface Lesson {
 export interface Course {
   id: string;
   slug: string;
-  numero: number; // 1..8, orden oficial definido en la Fase 1
+  numero: number; // orden oficial de los módulos (1..8 originales; 9+ ampliación)
   titulo: string;
   descripcion: string;
   resumen: string;

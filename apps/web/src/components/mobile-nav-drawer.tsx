@@ -15,7 +15,6 @@ import {
   Target,
   BookMarked,
   Newspaper,
-  Users,
   GraduationCap,
   User,
   Settings,
@@ -24,6 +23,11 @@ import {
   Sun,
   LogOut,
   ChevronDown,
+  HelpCircle,
+  Gavel,
+  PlayCircle,
+  ImageIcon,
+  Globe2,
   type LucideIcon,
 } from "lucide-react";
 import type { EnlaceNav, SeccionNav } from "@/lib/navigation";
@@ -46,11 +50,13 @@ const ICONOS: Record<string, LucideIcon> = {
   "/retos": Target,
   "/glosario": BookMarked,
   "/noticias": Newspaper,
-  "/docente/estudiantes": Users,
-  "/mi-tutoria": GraduationCap,
+  "/preguntas-frecuentes": HelpCircle,
+  "/jurisprudencia": Gavel,
+  "/videos": PlayCircle,
+  "/infografias": ImageIcon,
+  "/referencias-internacionales": Globe2,
   "/perfil": User,
   "/admin": ShieldCheck,
-  "/docente": Settings,
 };
 
 function iconoDe(href: string): LucideIcon {
@@ -61,7 +67,7 @@ interface MobileNavDrawerProps {
   abierto: boolean;
   onClose: () => void;
   secciones: SeccionMovil[];
-  enlaceRolExtra?: EnlaceMovil; // "Admin" o "Panel docente", según el rol
+  enlaceRolExtra?: EnlaceMovil; // "Admin", según el rol
   pathname: string;
   nombre: string;
   email: string;

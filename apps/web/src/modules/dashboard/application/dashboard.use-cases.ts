@@ -7,13 +7,6 @@ export class ObtenerDashboardEstudianteUseCase {
   }
 }
 
-export class ObtenerDashboardDocenteUseCase {
-  constructor(private readonly repo: IDashboardRepository) {}
-  async execute() {
-    return this.repo.obtenerResumenDocente();
-  }
-}
-
 export class ObtenerDashboardAdminUseCase {
   constructor(private readonly repo: IDashboardRepository) {}
   async execute() {

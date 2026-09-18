@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Heart, Download } from "lucide-react";
-import { ETIQUETAS_CATEGORIA, type CategoriaDocumento } from "../domain/library.entity";
+import { ETIQUETAS_CATEGORIA, type CategoriaDocumento, type EstadoNorma } from "../domain/library.entity";
+import { EstadoNormaBadge } from "./estado-norma-badge";
 
 interface DocumentCardProps {
   id: string;
@@ -12,6 +13,7 @@ interface DocumentCardProps {
   tags: string[];
   descargas: number;
   esFavoritoInicial: boolean;
+  estado: EstadoNorma;
 }
 
 export function DocumentCard({
@@ -21,6 +23,7 @@ export function DocumentCard({
   tags,
   descargas,
   esFavoritoInicial,
+  estado,
 }: DocumentCardProps) {
   const [esFavorito, setEsFavorito] = useState(esFavoritoInicial);
   const [cargando, setCargando] = useState(false);
@@ -45,9 +48,12 @@ export function DocumentCard({
       className="rounded-2xl border border-border bg-surface p-5 flex flex-col gap-2 hover:-translate-y-0.5 duration-200 hover:shadow-card-md transition-transform"
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold text-secondary bg-secondary/10 rounded-full px-2.5 py-1">
-          {ETIQUETAS_CATEGORIA[categoria]}
-        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-semibold text-secondary bg-secondary/10 rounded-full px-2.5 py-1">
+            {ETIQUETAS_CATEGORIA[categoria]}
+          </span>
+          <EstadoNormaBadge estado={estado} />
+        </div>
         <button
           onClick={toggleFavorito}
           disabled={cargando}

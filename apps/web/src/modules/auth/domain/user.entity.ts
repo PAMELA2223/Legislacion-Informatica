@@ -1,6 +1,6 @@
 // Capa de DOMINIO: entidad y reglas de negocio puras, sin dependencias externas
 
-export type Rol = "ADMINISTRADOR" | "DOCENTE" | "ESTUDIANTE" | "INVITADO";
+export type Rol = "ADMINISTRADOR" | "ESTUDIANTE" | "INVITADO";
 
 export interface User {
   id: string;
@@ -19,7 +19,7 @@ export class UserRules {
   }
 
   static puedeGestionarContenido(user: Pick<User, "rol">): boolean {
-    return user.rol === "ADMINISTRADOR" || user.rol === "DOCENTE";
+    return user.rol === "ADMINISTRADOR";
   }
 
   static esInvitado(user: Pick<User, "rol">): boolean {

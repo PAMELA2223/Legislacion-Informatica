@@ -21,7 +21,7 @@
 //   - `lib/authorization.ts`      → getAuthContext() / requireRole()
 //   - `lib/get-authenticated-user.ts`
 //   - docs/correccion-roles-prisma-supabase.md
-// Ninguna decisión de autorización o de qué interfaz (Docente/Invitado/
+// Ninguna decisión de autorización o de qué interfaz (Invitado/
 // Estudiante/Administrador) mostrar debe basarse en el valor devuelto por
 // esta clase.
 

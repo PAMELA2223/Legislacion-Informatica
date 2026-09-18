@@ -7,7 +7,6 @@ import { BadgeCard } from "@/modules/gamification/presentation/badge-card";
 
 const ETIQUETAS_ROL: Record<string, string> = {
   ADMINISTRADOR: "Administrador",
-  DOCENTE: "Docente",
   ESTUDIANTE: "Estudiante",
   INVITADO: "Invitado",
 };

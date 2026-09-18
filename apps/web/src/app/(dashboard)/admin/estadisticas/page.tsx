@@ -26,7 +26,7 @@ export default async function AdminEstadisticasPage() {
           icon={<Users className="w-4 h-4" />}
           label="Usuarios totales"
           value={resumen.totalUsuarios}
-          sub={`${resumen.totalEstudiantes} estudiantes · ${resumen.totalDocentes} docentes · ${resumen.totalAdministradores} admin`}
+          sub={`${resumen.totalEstudiantes} estudiantes · ${resumen.totalAdministradores} admin`}
         />
         <StatCard
           icon={<CheckCircle2 className="w-4 h-4" />}

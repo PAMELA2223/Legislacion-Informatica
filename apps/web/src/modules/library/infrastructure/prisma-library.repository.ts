@@ -6,6 +6,52 @@ import type { PrismaClient } from "@prisma/client";
 import type { ILibraryRepository } from "../domain/library-repository.interface";
 import type { CategoriaDocumento, LibraryDocument } from "../domain/library.entity";
 
+// Prisma devuelve `Date | null` en los campos de fecha; el dominio trabaja
+// con `string | null` (serializable a través de Server Components / JSON).
+// Se mapea explícitamente en vez de castear a ciegas, para no arrastrar
+// objetos Date sin serializar hacia la capa de presentación.
+type DocumentoPrisma = {
+  id: string;
+  titulo: string;
+  categoria: CategoriaDocumento;
+  archivoUrl: string | null;
+  tags: string[];
+  contenido: string;
+  descargas: number;
+  updatedAt: Date;
+  numeroIdentificacion: string | null;
+  pais: string | null;
+  institucionEmisora: string | null;
+  fechaEmision: Date | null;
+  fechaReforma: Date | null;
+  estado: LibraryDocument["estado"];
+  fuenteOficial: string | null;
+  enlaceOficial: string | null;
+  articulos: LibraryDocument["articulos"];
+};
+
+function aDocumentoDominio(d: DocumentoPrisma): LibraryDocument {
+  return {
+    id: d.id,
+    titulo: d.titulo,
+    categoria: d.categoria,
+    archivoUrl: d.archivoUrl,
+    tags: d.tags,
+    contenido: d.contenido,
+    descargas: d.descargas,
+    updatedAt: d.updatedAt.toISOString(),
+    numeroIdentificacion: d.numeroIdentificacion,
+    pais: d.pais,
+    institucionEmisora: d.institucionEmisora,
+    fechaEmision: d.fechaEmision?.toISOString() ?? null,
+    fechaReforma: d.fechaReforma?.toISOString() ?? null,
+    estado: d.estado,
+    fuenteOficial: d.fuenteOficial,
+    enlaceOficial: d.enlaceOficial,
+    articulos: d.articulos,
+  };
+}
+
 export class PrismaLibraryRepository implements ILibraryRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -21,7 +67,7 @@ export class PrismaLibraryRepository implements ILibraryRepository {
       include: { articulos: { orderBy: { orden: "asc" } } },
       orderBy: { titulo: "asc" },
     });
-    return documentos as unknown as LibraryDocument[];
+    return (documentos as unknown as DocumentoPrisma[]).map(aDocumentoDominio);
   }
 
   async obtenerDocumentoPorId(id: string): Promise<LibraryDocument | null> {
@@ -29,7 +75,7 @@ export class PrismaLibraryRepository implements ILibraryRepository {
       where: { id },
       include: { articulos: { orderBy: { orden: "asc" } } },
     });
-    return doc as unknown as LibraryDocument | null;
+    return doc ? aDocumentoDominio(doc as unknown as DocumentoPrisma) : null;
   }
 
   async buscarPorTexto(query: string): Promise<LibraryDocument[]> {
@@ -57,9 +103,9 @@ export class PrismaLibraryRepository implements ILibraryRepository {
 
     // Se preserva el orden de relevancia devuelto por ts_rank
     const ordenIds = filas.map((f) => f.id);
-    return (documentos as unknown as LibraryDocument[]).sort(
-      (a, b) => ordenIds.indexOf(a.id) - ordenIds.indexOf(b.id)
-    );
+    return (documentos as unknown as DocumentoPrisma[])
+      .map(aDocumentoDominio)
+      .sort((a, b) => ordenIds.indexOf(a.id) - ordenIds.indexOf(b.id));
   }
 
   async obtenerFavoritos(userId: string): Promise<string[]> {

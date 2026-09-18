@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/authorization";
 
 // Protege TODO /admin/* (incluye páginas anidadas que no tienen su propio
-// chequeo, como /admin/tutorias) — el layout de Next.js envuelve a todos
+// chequeo, como /admin/usuarios) — el layout de Next.js envuelve a todos
 // sus hijos, así que un solo chequeo aquí basta para toda la subárea.
 //
 // El sidebar de navegación de /admin ya no vive aquí: el layout raíz

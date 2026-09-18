@@ -20,7 +20,7 @@ import { createSupabaseServerClient } from "./supabase-server";
 import { prisma } from "./prisma";
 import type { Rol } from "@prisma/client";
 
-const ROLES_VALIDOS: Rol[] = ["ADMINISTRADOR", "DOCENTE", "ESTUDIANTE", "INVITADO"];
+const ROLES_VALIDOS: Rol[] = ["ADMINISTRADOR", "ESTUDIANTE", "INVITADO"];
 
 export async function getAuthenticatedUser() {
   const supabase = await createSupabaseServerClient();

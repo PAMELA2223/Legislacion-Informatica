@@ -18,11 +18,11 @@ import { TechLegalGraphic } from "@/modules/landing/presentation/tech-legal-grap
 import { SectionBadge } from "@/modules/landing/presentation/section-badge";
 
 const CARACTERISTICAS = [
-  { icon: GraduationCap, title: "8 módulos educativos", desc: "Itinerario progresivo del concepto a la aplicación práctica de la legislación informática." },
+  { icon: GraduationCap, title: "11 módulos educativos", desc: "Itinerario progresivo del concepto a la aplicación práctica de la legislación informática." },
   { icon: Library, title: "Biblioteca jurídica", desc: "Constitución, LOPDP, COIP y Ley de Comercio Electrónico, con buscador y consulta por artículo." },
   { icon: Scale, title: "Casos prácticos reales", desc: "Escenarios con normativa aplicable, sanciones y retroalimentación jurídica." },
   { icon: Trophy, title: "Gamificación", desc: "XP, niveles, insignias y ranking para sostener la motivación del estudiante." },
-  { icon: Users, title: "Tutoría docente-estudiante", desc: "Seguimiento académico individual con tareas, objetivos y reuniones." },
+  { icon: Users, title: "Foro académico", desc: "Discusión por categorías temáticas entre estudiantes, con reacciones e hilos." },
   { icon: Target, title: "Autoevaluación de competencias", desc: "Diagnóstico inicial y final sobre 6 ejes de competencia digital." },
 ];
 
@@ -37,9 +37,9 @@ const TECNOLOGIAS = [
 
 const SEGURIDAD = [
   { icon: LogIn, title: "Autenticación", desc: "Gestionada mediante Supabase Auth, con sesión verificada en servidor." },
-  { icon: Users, title: "Roles diferenciados", desc: "Administrador, Docente, Estudiante e Invitado, cada uno con su propia experiencia." },
+  { icon: Users, title: "Roles diferenciados", desc: "Administrador, Estudiante e Invitado, cada uno con su propia experiencia." },
   { icon: Lock, title: "Protección de rutas", desc: "Cada página exige el rol correspondiente en el servidor, no solo en la interfaz." },
-  { icon: ShieldCheck, title: "Protección de acciones", desc: "Cada operación sensible (roles, tutorías, contenidos) se verifica en el backend." },
+  { icon: ShieldCheck, title: "Protección de acciones", desc: "Cada operación sensible (roles, contenidos) se verifica en el backend." },
 ];
 
 export default function LandingPage() {
@@ -83,8 +83,8 @@ export default function LandingPage() {
             <p className="text-slate-300 text-lg max-w-xl mb-8">
               Una plataforma educativa desarrollada para fortalecer las
               competencias digitales y jurídicas en Ecuador: módulos,
-              biblioteca legal, casos reales, evaluaciones y tutoría
-              docente-estudiante, todo en un mismo lugar.
+              biblioteca legal, casos reales, evaluaciones y gamificación,
+              todo en un mismo lugar.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/registro">
@@ -125,7 +125,7 @@ export default function LandingPage() {
               informática ecuatoriana en un itinerario de aprendizaje
               estructurado, con evaluación continua y seguimiento
               individualizado — pensado para acercar el marco legal digital
-              a estudiantes y docentes de forma práctica.
+              a los estudiantes de forma práctica.
             </p>
           </div>
           <div>
@@ -240,9 +240,8 @@ export default function LandingPage() {
                 Esta plataforma forma parte de un proyecto de tesis
                 universitaria orientado a fortalecer las competencias
                 digitales y el conocimiento de la legislación informática en
-                Ecuador. Está dirigida a estudiantes que cursan la materia,
-                docentes que guían su proceso, y administradores que
-                gestionan el contenido institucional.
+                Ecuador. Está dirigida a estudiantes que cursan la materia
+                y administradores que gestionan el contenido institucional.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Más allá de la interfaz, el proyecto aporta una arquitectura
@@ -255,7 +254,7 @@ export default function LandingPage() {
             <div className="flex flex-col gap-4 justify-center">
               <div className="flex items-center gap-3 rounded-xl bg-background-secondary p-4">
                 <BookOpen className="w-5 h-5 text-primary shrink-0" />
-                <span className="text-sm text-foreground">8 módulos + biblioteca jurídica completa</span>
+                <span className="text-sm text-foreground">11 módulos + biblioteca jurídica completa</span>
               </div>
               <div className="flex items-center gap-3 rounded-xl bg-background-secondary p-4">
                 <ShieldCheck className="w-5 h-5 text-accent shrink-0" />
@@ -263,7 +262,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-3 rounded-xl bg-background-secondary p-4">
                 <Users className="w-5 h-5 text-gold shrink-0" />
-                <span className="text-sm text-foreground">Tutoría docente-estudiante con seguimiento real</span>
+                <span className="text-sm text-foreground">Gamificación y foro académico entre estudiantes</span>
               </div>
             </div>
           </div>

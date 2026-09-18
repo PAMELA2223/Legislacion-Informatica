@@ -17,7 +17,7 @@ export default async function ModulosPage() {
     <main className="max-w-5xl mx-auto px-6 py-12">
       <h1 className="text-2xl font-bold text-foreground mb-1">Módulos educativos</h1>
       <p className="text-sm text-muted-foreground mb-8">
-        Itinerario progresivo de 8 módulos sobre legislación informática ecuatoriana.
+        Itinerario progresivo de 11 módulos sobre legislación informática ecuatoriana.
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

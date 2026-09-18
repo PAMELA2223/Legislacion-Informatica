@@ -22,16 +22,14 @@ describe("UserRules.passwordEsValida", () => {
 describe("UserRules.puedeAccederAdmin", () => {
   it("permite acceso solo al rol ADMINISTRADOR", () => {
     expect(UserRules.puedeAccederAdmin({ rol: "ADMINISTRADOR" })).toBe(true);
-    expect(UserRules.puedeAccederAdmin({ rol: "DOCENTE" })).toBe(false);
     expect(UserRules.puedeAccederAdmin({ rol: "ESTUDIANTE" })).toBe(false);
     expect(UserRules.puedeAccederAdmin({ rol: "INVITADO" })).toBe(false);
   });
 });
 
 describe("UserRules.puedeGestionarContenido", () => {
-  it("permite gestión a ADMINISTRADOR y DOCENTE", () => {
+  it("permite gestión solo a ADMINISTRADOR", () => {
     expect(UserRules.puedeGestionarContenido({ rol: "ADMINISTRADOR" })).toBe(true);
-    expect(UserRules.puedeGestionarContenido({ rol: "DOCENTE" })).toBe(true);
   });
 
   it("no permite gestión a ESTUDIANTE ni INVITADO", () => {

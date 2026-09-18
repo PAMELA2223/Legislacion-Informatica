@@ -78,6 +78,7 @@ export default async function BibliotecaPage({
             tags={doc.tags}
             descargas={doc.descargas}
             esFavoritoInicial={idsFavoritos.has(doc.id)}
+            estado={doc.estado}
           />
         ))}
         {documentos.length === 0 && (

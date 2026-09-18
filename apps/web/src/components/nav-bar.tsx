@@ -16,17 +16,15 @@ import { MobileNavDrawer } from "./mobile-nav-drawer";
 
 const ETIQUETAS_ROL: Record<string, string> = {
   ADMINISTRADOR: "Administrador",
-  DOCENTE: "Docente",
   ESTUDIANTE: "Estudiante",
   INVITADO: "Invitado",
 };
 
 // Un acento de color distinto por rol, para diferenciar visualmente el
-// área administrativa/docente sin cambiar la identidad general (Sección 34
+// área administrativa sin cambiar la identidad general (Sección 34
 // y 37 del pedido: "diferenciar visualmente el área administrativa").
 const ACENTO_ROL: Record<string, string> = {
   ADMINISTRADOR: "bg-gold/15 text-gold border-gold/30",
-  DOCENTE: "bg-accent/15 text-accent border-accent/30",
   ESTUDIANTE: "bg-primary/15 text-primary-hover border-primary/30",
   INVITADO: "bg-white/10 text-slate-300 border-white/20",
 };

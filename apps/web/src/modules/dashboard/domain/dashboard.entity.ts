@@ -29,24 +29,9 @@ export interface ResumenEstudiante {
   perfilCompetencias: PerfilComparativo;
 }
 
-export interface ProgresoPorModulo {
-  courseId: string;
-  titulo: string;
-  inscritos: number;
-  completados: number;
-}
-
-export interface ResumenDocente {
-  totalEstudiantes: number;
-  progresoPromedioGeneral: number;
-  promedioCalificacionesGeneral: number;
-  progresoPorModulo: ProgresoPorModulo[];
-}
-
 export interface ResumenAdmin {
   totalUsuarios: number;
   totalEstudiantes: number;
-  totalDocentes: number;
   totalAdministradores: number;
   cursoMasConsultado: { titulo: string; inscritos: number } | null;
   tasaFinalizacionGeneral: number; // % de inscripciones completadas

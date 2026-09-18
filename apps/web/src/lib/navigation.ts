@@ -22,33 +22,36 @@ export interface SeccionNav {
   enlaces: EnlaceNav[];
 }
 
-// Rutas académicas/comunitarias, válidas para ESTUDIANTE y DOCENTE (un
+// Rutas académicas/comunitarias, válidas para ESTUDIANTE (un
 // administrador gestiona este contenido desde /admin, no navega aquí).
 const SECCIONES: SeccionNav[] = [
   {
     titulo: "Principal",
-    enlaces: [{ href: "/dashboard", label: "Inicio", roles: ["ESTUDIANTE", "DOCENTE"], icon: "Home" }],
+    enlaces: [{ href: "/dashboard", label: "Inicio", roles: ["ESTUDIANTE"], icon: "Home" }],
   },
   {
     titulo: "Académico",
     enlaces: [
-      { href: "/modulos", label: "Módulos", roles: ["ESTUDIANTE", "DOCENTE"], icon: "BookOpen" },
-      { href: "/biblioteca", label: "Biblioteca", roles: ["ESTUDIANTE", "DOCENTE"], icon: "Library" },
-      { href: "/evaluaciones", label: "Evaluaciones", roles: ["ESTUDIANTE", "DOCENTE"], icon: "ClipboardCheck" },
-      { href: "/casos-practicos", label: "Casos prácticos", roles: ["ESTUDIANTE", "DOCENTE"], icon: "Scale" },
-      { href: "/autoevaluacion", label: "Autoevaluación", roles: ["ESTUDIANTE", "DOCENTE"], icon: "ClipboardList" },
-      { href: "/docente/estudiantes", label: "Mis estudiantes", roles: ["DOCENTE"], icon: "Users" },
-      { href: "/mi-tutoria", label: "Mi tutoría", roles: ["ESTUDIANTE"], icon: "GraduationCap" },
+      { href: "/modulos", label: "Módulos", roles: ["ESTUDIANTE"], icon: "BookOpen" },
+      { href: "/biblioteca", label: "Biblioteca", roles: ["ESTUDIANTE"], icon: "Library" },
+      { href: "/evaluaciones", label: "Evaluaciones", roles: ["ESTUDIANTE"], icon: "ClipboardCheck" },
+      { href: "/casos-practicos", label: "Casos prácticos", roles: ["ESTUDIANTE"], icon: "Scale" },
+      { href: "/autoevaluacion", label: "Autoevaluación", roles: ["ESTUDIANTE"], icon: "ClipboardList" },
     ],
   },
   {
     titulo: "Comunidad",
     enlaces: [
-      { href: "/foro", label: "Foro", roles: ["ESTUDIANTE", "DOCENTE"], icon: "MessagesSquare" },
-      { href: "/ranking", label: "Ranking", roles: ["ESTUDIANTE", "DOCENTE"], icon: "Trophy" },
-      { href: "/retos", label: "Retos", roles: ["ESTUDIANTE", "DOCENTE"], icon: "Target" },
-      { href: "/glosario", label: "Glosario", roles: ["ESTUDIANTE", "DOCENTE"], icon: "BookMarked" },
-      { href: "/noticias", label: "Noticias", roles: ["ESTUDIANTE", "DOCENTE"], icon: "Newspaper" },
+      { href: "/foro", label: "Foro", roles: ["ESTUDIANTE"], icon: "MessagesSquare" },
+      { href: "/ranking", label: "Ranking", roles: ["ESTUDIANTE"], icon: "Trophy" },
+      { href: "/retos", label: "Retos", roles: ["ESTUDIANTE"], icon: "Target" },
+      { href: "/glosario", label: "Glosario", roles: ["ESTUDIANTE"], icon: "BookMarked" },
+      { href: "/jurisprudencia", label: "Jurisprudencia", roles: ["ESTUDIANTE"], icon: "Gavel" },
+      { href: "/videos", label: "Videos", roles: ["ESTUDIANTE"], icon: "PlayCircle" },
+      { href: "/infografias", label: "Infografías", roles: ["ESTUDIANTE"], icon: "ImageIcon" },
+      { href: "/referencias-internacionales", label: "Referencias internacionales", roles: ["ESTUDIANTE"], icon: "Globe2" },
+      { href: "/noticias", label: "Noticias", roles: ["ESTUDIANTE"], icon: "Newspaper" },
+      { href: "/preguntas-frecuentes", label: "Preguntas frecuentes", roles: ["ESTUDIANTE"], icon: "HelpCircle" },
     ],
   },
 ];
@@ -83,8 +86,6 @@ export function obtenerEnlacesPlanos(rol: Rol): EnlaceNav[] {
 export function obtenerEnlaceRolExtra(rol: Rol): EnlaceNav | undefined {
   if (rol === "ADMINISTRADOR")
     return { href: "/admin", label: "Admin", roles: ["ADMINISTRADOR"], icon: "ShieldCheck" };
-  if (rol === "DOCENTE")
-    return { href: "/docente", label: "Panel docente", roles: ["DOCENTE"], icon: "Settings" };
   return undefined;
 }
 
@@ -93,7 +94,7 @@ export function obtenerEnlaceRolExtra(rol: Rol): EnlaceNav | undefined {
 // ============================================================
 // Un único componente de sidebar (components/sidebar/app-sidebar.tsx) se
 // alimenta de una lista de items distinta según el rol — nunca se copia el
-// componente 4 veces. Docente y Estudiante reutilizan exactamente la misma
+// componente 4 veces. Estudiante reutiliza exactamente la misma
 // navegación de arriba (cero riesgo de que el sidebar muestre algo que el
 // navbar/drawer no muestran); Administrador reutiliza las rutas reales que
 // ya existían en el antiguo `admin-sidebar.tsx`.
@@ -101,19 +102,23 @@ export function obtenerEnlaceRolExtra(rol: Rol): EnlaceNav | undefined {
 export const ITEMS_SIDEBAR_ADMIN: EnlaceNav[] = [
   { href: "/admin/estadisticas", label: "Estadísticas", roles: ["ADMINISTRADOR"], icon: "LayoutDashboard" },
   { href: "/admin/usuarios", label: "Usuarios y roles", roles: ["ADMINISTRADOR"], icon: "Users" },
-  { href: "/admin/tutorias", label: "Tutorías", roles: ["ADMINISTRADOR"], icon: "UserCheck" },
   { href: "/admin/cursos", label: "Módulos", roles: ["ADMINISTRADOR"], icon: "GraduationCap" },
   { href: "/admin/biblioteca", label: "Biblioteca", roles: ["ADMINISTRADOR"], icon: "Library" },
   { href: "/admin/evaluaciones", label: "Evaluaciones", roles: ["ADMINISTRADOR"], icon: "ClipboardList" },
   { href: "/admin/casos-practicos", label: "Casos prácticos", roles: ["ADMINISTRADOR"], icon: "Scale" },
   { href: "/admin/glosario", label: "Glosario", roles: ["ADMINISTRADOR"], icon: "BookMarked" },
   { href: "/admin/noticias", label: "Noticias", roles: ["ADMINISTRADOR"], icon: "Newspaper" },
+  { href: "/admin/faq", label: "Preguntas frecuentes", roles: ["ADMINISTRADOR"], icon: "HelpCircle" },
+  { href: "/admin/jurisprudencia", label: "Jurisprudencia", roles: ["ADMINISTRADOR"], icon: "Gavel" },
+  { href: "/admin/videos", label: "Videos", roles: ["ADMINISTRADOR"], icon: "PlayCircle" },
+  { href: "/admin/infografias", label: "Infografías", roles: ["ADMINISTRADOR"], icon: "ImageIcon" },
+  { href: "/admin/referencias-internacionales", label: "Referencias internacionales", roles: ["ADMINISTRADOR"], icon: "Globe2" },
   { href: "/admin/foro", label: "Foro", roles: ["ADMINISTRADOR"], icon: "MessagesSquare" },
   { href: "/admin/logs", label: "Logs", roles: ["ADMINISTRADOR"], icon: "ScrollText" },
 ];
 
-/** Items del sidebar lateral de escritorio para un rol dado. Docente y
- * Estudiante: la misma navegación de `obtenerEnlacesPlanos`, con "Perfil"
+/** Items del sidebar lateral de escritorio para un rol dado. Estudiante:
+ * la misma navegación de `obtenerEnlacesPlanos`, con "Perfil"
  * fijado al final. Administrador: sus rutas reales de gestión. */
 export function obtenerItemsSidebar(rol: Rol): EnlaceNav[] {
   if (rol === "ADMINISTRADOR") return ITEMS_SIDEBAR_ADMIN;

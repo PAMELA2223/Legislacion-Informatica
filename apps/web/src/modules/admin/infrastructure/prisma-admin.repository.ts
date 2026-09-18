@@ -1,19 +1,21 @@
 import type { PrismaClient, Rol } from "@prisma/client";
 import { registrarLog } from "@/lib/audit-log";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import type { IAdminRepository } from "../domain/admin-repository.interface";
+import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
 import type {
   AdminCaseStudyRow,
   AdminCourseRow,
-  AdminEvaluationDetalle,
   AdminEvaluationRow,
+  AdminFaqRow,
   AdminForumThreadRow,
   AdminGlossaryRow,
+  AdminInfographicRow,
+  AdminInternationalReferenceRow,
+  AdminJurisprudenceRow,
   AdminLibraryRow,
   AdminNewsRow,
-  AdminNuevaPregunta,
-  AdminNuevoCaso,
   AdminUserRow,
+  AdminVideoRow,
   AuditLogEntry,
 } from "../domain/admin.entity";
 
@@ -40,7 +42,7 @@ export class PrismaAdminRepository implements IAdminRepository {
 
     // CRÍTICO: el middleware protege rutas leyendo el metadata de Supabase
     // Auth (el JWT de sesión), no la tabla de Prisma. Sin este paso, el
-    // cambio de rol no otorgaría acceso real a /admin ni /docente.
+    // cambio de rol no otorgaría acceso real a /admin.
     const supabaseAdmin = createSupabaseAdminClient();
     if (supabaseAdmin) {
       const { data: existente } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -137,33 +139,86 @@ export class PrismaAdminRepository implements IAdminRepository {
     await registrarLog(this.prisma, actorId, "ELIMINAR", "termino_glosario", id);
   }
 
-  // ---------- Biblioteca ----------
+  // ---------- Biblioteca / normas ----------
 
   async listarBiblioteca(): Promise<AdminLibraryRow[]> {
     const docs = await this.prisma.libraryDocument.findMany({ orderBy: { titulo: "asc" } });
-    return docs.map((d) => ({
+    return docs.map((d) => this.aFilaAdmin(d));
+  }
+
+  async obtenerDocumentoBiblioteca(id: string): Promise<AdminLibraryRow | null> {
+    const doc = await this.prisma.libraryDocument.findUnique({ where: { id } });
+    return doc ? this.aFilaAdmin(doc) : null;
+  }
+
+  private aFilaAdmin(d: {
+    id: string;
+    titulo: string;
+    categoria: string;
+    tags: string[];
+    descargas: number;
+    updatedAt: Date;
+    archivoUrl: string | null;
+    contenido: string;
+    numeroIdentificacion: string | null;
+    pais: string | null;
+    institucionEmisora: string | null;
+    fechaEmision: Date | null;
+    fechaReforma: Date | null;
+    estado: string;
+    fuenteOficial: string | null;
+    enlaceOficial: string | null;
+  }): AdminLibraryRow {
+    return {
       id: d.id,
       titulo: d.titulo,
       categoria: d.categoria,
       tags: d.tags,
       descargas: d.descargas,
-    }));
+      updatedAt: d.updatedAt.toISOString(),
+      archivoUrl: d.archivoUrl,
+      contenido: d.contenido,
+      numeroIdentificacion: d.numeroIdentificacion,
+      pais: d.pais,
+      institucionEmisora: d.institucionEmisora,
+      fechaEmision: d.fechaEmision?.toISOString() ?? null,
+      fechaReforma: d.fechaReforma?.toISOString() ?? null,
+      estado: d.estado,
+      fuenteOficial: d.fuenteOficial,
+      enlaceOficial: d.enlaceOficial,
+    };
   }
 
-  async crearDocumentoBiblioteca(
-    actorId: string,
-    data: { titulo: string; categoria: string; tags: string[]; contenido: string; archivoUrl?: string }
-  ): Promise<void> {
-    await this.prisma.libraryDocument.create({
-      data: {
-        titulo: data.titulo,
-        categoria: data.categoria as never,
-        tags: data.tags,
-        contenido: data.contenido,
-        archivoUrl: data.archivoUrl,
-      },
-    });
+  private datosParaPrisma(data: DatosDocumentoBiblioteca) {
+    return {
+      titulo: data.titulo,
+      categoria: data.categoria as never,
+      tags: data.tags,
+      contenido: data.contenido,
+      archivoUrl: data.archivoUrl || null,
+      numeroIdentificacion: data.numeroIdentificacion || null,
+      pais: data.pais || null,
+      institucionEmisora: data.institucionEmisora || null,
+      fechaEmision: data.fechaEmision ? new Date(data.fechaEmision) : null,
+      fechaReforma: data.fechaReforma ? new Date(data.fechaReforma) : null,
+      estado: (data.estado || "VIGENTE") as never,
+      fuenteOficial: data.fuenteOficial || null,
+      enlaceOficial: data.enlaceOficial || null,
+    };
+  }
+
+  async crearDocumentoBiblioteca(actorId: string, data: DatosDocumentoBiblioteca): Promise<void> {
+    await this.prisma.libraryDocument.create({ data: this.datosParaPrisma(data) });
     await registrarLog(this.prisma, actorId, "CREAR", "documento_biblioteca", data.titulo);
+  }
+
+  async actualizarDocumentoBiblioteca(
+    actorId: string,
+    id: string,
+    data: DatosDocumentoBiblioteca
+  ): Promise<void> {
+    await this.prisma.libraryDocument.update({ where: { id }, data: this.datosParaPrisma(data) });
+    await registrarLog(this.prisma, actorId, "EDITAR", "documento_biblioteca", data.titulo);
   }
 
   async eliminarDocumentoBiblioteca(actorId: string, id: string): Promise<void> {
@@ -199,65 +254,6 @@ export class PrismaAdminRepository implements IAdminRepository {
     }));
   }
 
-  async crearEvaluacion(
-    actorId: string,
-    data: { titulo: string; courseId?: string; tiempoLimite: number }
-  ): Promise<{ id: string }> {
-    const evaluacion = await this.prisma.evaluation.create({
-      data: {
-        titulo: data.titulo,
-        courseId: data.courseId || undefined,
-        tiempoLimite: data.tiempoLimite,
-        orden: 1,
-      },
-    });
-    await registrarLog(this.prisma, actorId, "CREAR", "evaluacion", data.titulo);
-    return { id: evaluacion.id };
-  }
-
-  async obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetalle | null> {
-    const evaluacion = await this.prisma.evaluation.findUnique({
-      where: { id },
-      include: { preguntas: { orderBy: { orden: "asc" } } },
-    });
-    if (!evaluacion) return null;
-    return {
-      id: evaluacion.id,
-      titulo: evaluacion.titulo,
-      courseId: evaluacion.courseId,
-      tiempoLimite: evaluacion.tiempoLimite,
-      preguntas: evaluacion.preguntas.map((p) => ({
-        id: p.id,
-        tipo: p.tipo,
-        enunciado: p.enunciado,
-        puntaje: p.puntaje,
-        orden: p.orden,
-      })),
-    };
-  }
-
-  async crearPregunta(actorId: string, evaluationId: string, data: AdminNuevaPregunta): Promise<void> {
-    const totalActual = await this.prisma.question.count({ where: { evaluationId } });
-    await this.prisma.question.create({
-      data: {
-        evaluationId,
-        tipo: data.tipo,
-        enunciado: data.enunciado,
-        opciones: data.opciones as never,
-        respuestaCorrecta: data.respuestaCorrecta as never,
-        retroalimentacion: data.retroalimentacion,
-        puntaje: data.puntaje,
-        orden: totalActual + 1,
-      },
-    });
-    await registrarLog(this.prisma, actorId, "CREAR", "pregunta", `Evaluación ${evaluationId}`);
-  }
-
-  async eliminarPregunta(actorId: string, id: string): Promise<void> {
-    await this.prisma.question.delete({ where: { id } });
-    await registrarLog(this.prisma, actorId, "ELIMINAR", "pregunta", id);
-  }
-
   async eliminarEvaluacion(actorId: string, id: string): Promise<void> {
     await this.prisma.evaluation.delete({ where: { id } });
     await registrarLog(this.prisma, actorId, "ELIMINAR", "evaluacion", id);
@@ -273,29 +269,6 @@ export class PrismaAdminRepository implements IAdminRepository {
       categoria: c.categoria,
       totalIntentos: c._count.intentos,
     }));
-  }
-
-  async crearCaso(actorId: string, data: AdminNuevoCaso): Promise<void> {
-    const totalActual = await this.prisma.caseStudy.count();
-    await this.prisma.caseStudy.create({
-      data: {
-        titulo: data.titulo,
-        categoria: data.categoria as never,
-        escenario: data.escenario,
-        descripcion: data.descripcion,
-        normativaAplicable: data.normativaAplicable,
-        derechosVulnerados: data.derechosVulnerados,
-        sanciones: data.sanciones,
-        actuacionCorrecta: data.actuacionCorrecta,
-        retroalimentacionJuridica: data.retroalimentacionJuridica,
-        nivelDificultad: data.nivelDificultad as never,
-        competenciaDesarrollada: data.competenciaDesarrollada,
-        opciones: { alternativas: data.alternativas } as never,
-        indiceCorrecto: data.indiceCorrecto,
-        orden: totalActual + 1,
-      },
-    });
-    await registrarLog(this.prisma, actorId, "CREAR", "caso_practico", data.titulo);
   }
 
   async eliminarCaso(actorId: string, id: string): Promise<void> {
@@ -322,5 +295,144 @@ export class PrismaAdminRepository implements IAdminRepository {
   async eliminarHiloForo(actorId: string, id: string): Promise<void> {
     await this.prisma.forumThread.delete({ where: { id } });
     await registrarLog(this.prisma, actorId, "ELIMINAR", "hilo_foro", id);
+  }
+
+  // ---------- FAQ ----------
+
+  async listarFaq(): Promise<AdminFaqRow[]> {
+    return this.prisma.faqItem.findMany({ orderBy: [{ categoria: "asc" }, { orden: "asc" }] });
+  }
+
+  async obtenerPreguntaFaq(id: string): Promise<AdminFaqRow | null> {
+    return this.prisma.faqItem.findUnique({ where: { id } });
+  }
+
+  async crearPreguntaFaq(actorId: string, data: Omit<AdminFaqRow, "id">): Promise<void> {
+    await this.prisma.faqItem.create({ data });
+    await registrarLog(this.prisma, actorId, "CREAR", "pregunta_faq", data.pregunta);
+  }
+
+  async actualizarPreguntaFaq(actorId: string, id: string, data: Omit<AdminFaqRow, "id">): Promise<void> {
+    await this.prisma.faqItem.update({ where: { id }, data });
+    await registrarLog(this.prisma, actorId, "EDITAR", "pregunta_faq", data.pregunta);
+  }
+
+  async eliminarPreguntaFaq(actorId: string, id: string): Promise<void> {
+    await this.prisma.faqItem.delete({ where: { id } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "pregunta_faq", id);
+  }
+
+  // ---------- Jurisprudencia ----------
+
+  async listarJurisprudencia(): Promise<AdminJurisprudenceRow[]> {
+    return this.prisma.jurisprudenceCase.findMany({ orderBy: { anio: "desc" } });
+  }
+
+  async obtenerCasoJurisprudencia(id: string): Promise<AdminJurisprudenceRow | null> {
+    return this.prisma.jurisprudenceCase.findUnique({ where: { id } });
+  }
+
+  async crearCasoJurisprudencia(actorId: string, data: Omit<AdminJurisprudenceRow, "id">): Promise<void> {
+    await this.prisma.jurisprudenceCase.create({ data: { ...data, enlaceOficial: data.enlaceOficial || null } });
+    await registrarLog(this.prisma, actorId, "CREAR", "caso_jurisprudencia", data.nombreCaso);
+  }
+
+  async actualizarCasoJurisprudencia(
+    actorId: string,
+    id: string,
+    data: Omit<AdminJurisprudenceRow, "id">
+  ): Promise<void> {
+    await this.prisma.jurisprudenceCase.update({
+      where: { id },
+      data: { ...data, enlaceOficial: data.enlaceOficial || null },
+    });
+    await registrarLog(this.prisma, actorId, "EDITAR", "caso_jurisprudencia", data.nombreCaso);
+  }
+
+  async eliminarCasoJurisprudencia(actorId: string, id: string): Promise<void> {
+    await this.prisma.jurisprudenceCase.delete({ where: { id } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "caso_jurisprudencia", id);
+  }
+
+  // ---------- Videos ----------
+
+  async listarVideos(): Promise<AdminVideoRow[]> {
+    return this.prisma.videoResource.findMany({ orderBy: { createdAt: "desc" } });
+  }
+
+  async obtenerVideo(id: string): Promise<AdminVideoRow | null> {
+    return this.prisma.videoResource.findUnique({ where: { id } });
+  }
+
+  async crearVideo(actorId: string, data: Omit<AdminVideoRow, "id">): Promise<void> {
+    await this.prisma.videoResource.create({ data });
+    await registrarLog(this.prisma, actorId, "CREAR", "video", data.titulo);
+  }
+
+  async actualizarVideo(actorId: string, id: string, data: Omit<AdminVideoRow, "id">): Promise<void> {
+    await this.prisma.videoResource.update({ where: { id }, data });
+    await registrarLog(this.prisma, actorId, "EDITAR", "video", data.titulo);
+  }
+
+  async eliminarVideo(actorId: string, id: string): Promise<void> {
+    await this.prisma.videoResource.delete({ where: { id } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "video", id);
+  }
+
+  // ---------- Infografías ----------
+
+  async listarInfografias(): Promise<AdminInfographicRow[]> {
+    return this.prisma.infographic.findMany({ orderBy: { createdAt: "desc" } });
+  }
+
+  async obtenerInfografia(id: string): Promise<AdminInfographicRow | null> {
+    return this.prisma.infographic.findUnique({ where: { id } });
+  }
+
+  async crearInfografia(actorId: string, data: Omit<AdminInfographicRow, "id">): Promise<void> {
+    await this.prisma.infographic.create({ data });
+    await registrarLog(this.prisma, actorId, "CREAR", "infografia", data.titulo);
+  }
+
+  async actualizarInfografia(actorId: string, id: string, data: Omit<AdminInfographicRow, "id">): Promise<void> {
+    await this.prisma.infographic.update({ where: { id }, data });
+    await registrarLog(this.prisma, actorId, "EDITAR", "infografia", data.titulo);
+  }
+
+  async eliminarInfografia(actorId: string, id: string): Promise<void> {
+    await this.prisma.infographic.delete({ where: { id } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "infografia", id);
+  }
+
+  // ---------- Referencias internacionales ----------
+
+  async listarReferenciasInternacionales(): Promise<AdminInternationalReferenceRow[]> {
+    return this.prisma.internationalReference.findMany({ orderBy: [{ categoria: "asc" }, { titulo: "asc" }] });
+  }
+
+  async obtenerReferenciaInternacional(id: string): Promise<AdminInternationalReferenceRow | null> {
+    return this.prisma.internationalReference.findUnique({ where: { id } });
+  }
+
+  async crearReferenciaInternacional(
+    actorId: string,
+    data: Omit<AdminInternationalReferenceRow, "id">
+  ): Promise<void> {
+    await this.prisma.internationalReference.create({ data });
+    await registrarLog(this.prisma, actorId, "CREAR", "referencia_internacional", data.titulo);
+  }
+
+  async actualizarReferenciaInternacional(
+    actorId: string,
+    id: string,
+    data: Omit<AdminInternationalReferenceRow, "id">
+  ): Promise<void> {
+    await this.prisma.internationalReference.update({ where: { id }, data });
+    await registrarLog(this.prisma, actorId, "EDITAR", "referencia_internacional", data.titulo);
+  }
+
+  async eliminarReferenciaInternacional(actorId: string, id: string): Promise<void> {
+    await this.prisma.internationalReference.delete({ where: { id } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "referencia_internacional", id);
   }
 }

@@ -6,7 +6,6 @@ import type { IDashboardRepository } from "../domain/dashboard-repository.interf
 import type {
   ActividadReciente,
   ResumenAdmin,
-  ResumenDocente,
   ResumenEstudiante,
 } from "../domain/dashboard.entity";
 
@@ -137,49 +136,10 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     );
   }
 
-  async obtenerResumenDocente(): Promise<ResumenDocente> {
-    const [totalEstudiantes, cursos, enrollments, intentosEvaluacion] = await Promise.all([
-      this.prisma.user.count({ where: { rol: "ESTUDIANTE" } }),
-      this.prisma.course.findMany({ orderBy: { orden: "asc" } }),
-      this.prisma.enrollment.findMany(),
-      this.prisma.quizAttempt.findMany(),
-    ]);
-
-    const progresoPromedioGeneral =
-      enrollments.length === 0
-        ? 0
-        : Math.round(enrollments.reduce((s, e) => s + e.progreso, 0) / enrollments.length);
-
-    const promedioCalificacionesGeneral =
-      intentosEvaluacion.length === 0
-        ? 0
-        : Math.round(
-            intentosEvaluacion.reduce((s, i) => s + i.puntaje, 0) / intentosEvaluacion.length
-          );
-
-    const progresoPorModulo = cursos.map((curso) => {
-      const delCurso = enrollments.filter((e) => e.courseId === curso.id);
-      return {
-        courseId: curso.id,
-        titulo: curso.titulo,
-        inscritos: delCurso.length,
-        completados: delCurso.filter((e) => e.completado).length,
-      };
-    });
-
-    return {
-      totalEstudiantes,
-      progresoPromedioGeneral,
-      promedioCalificacionesGeneral,
-      progresoPorModulo,
-    };
-  }
-
   async obtenerResumenAdmin(): Promise<ResumenAdmin> {
     const [
       totalUsuarios,
       totalEstudiantes,
-      totalDocentes,
       totalAdministradores,
       cursos,
       enrollments,
@@ -191,7 +151,6 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { rol: "ESTUDIANTE" } }),
-      this.prisma.user.count({ where: { rol: "DOCENTE" } }),
       this.prisma.user.count({ where: { rol: "ADMINISTRADOR" } }),
       this.prisma.course.findMany(),
       this.prisma.enrollment.findMany(),
@@ -239,7 +198,6 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     return {
       totalUsuarios,
       totalEstudiantes,
-      totalDocentes,
       totalAdministradores,
       cursoMasConsultado: inscritosPorCurso[0] ?? null,
       tasaFinalizacionGeneral,

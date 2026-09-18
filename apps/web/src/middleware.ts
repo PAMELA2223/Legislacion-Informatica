@@ -6,7 +6,6 @@ const RUTAS_PROTEGIDAS = [
   "/dashboard",
   "/perfil",
   "/admin",
-  "/docente",
   "/modulos",
   "/biblioteca",
   "/buscar",
@@ -18,7 +17,11 @@ const RUTAS_PROTEGIDAS = [
   "/foro",
   "/glosario",
   "/noticias",
-  "/mi-tutoria",
+  "/preguntas-frecuentes",
+  "/jurisprudencia",
+  "/videos",
+  "/infografias",
+  "/referencias-internacionales",
 ];
 // Rutas que requieren, además, rol de administrador — verificado en las
 // páginas (ver admin/layout.tsx), no aquí. Se deja esta lista solo como
@@ -27,7 +30,7 @@ const RUTAS_PROTEGIDAS = [
 // NOTA IMPORTANTE: el middleware corre en el Edge Runtime y solo tiene
 // acceso al JWT de sesión (Supabase Auth), no a Prisma. Por eso aquí SOLO
 // se verifica que haya sesión iniciada. La verificación fina de ROL
-// (admin/docente) se hace en cada página/layout consultando Prisma
+// (admin) se hace en cada página/layout consultando Prisma
 // directamente, que es la fuente de verdad real del rol de un usuario
 // (ver lib/get-authenticated-user.ts para el detalle de este diseño).
 
@@ -74,7 +77,6 @@ export const config = {
     "/dashboard/:path*",
     "/perfil/:path*",
     "/admin/:path*",
-    "/docente/:path*",
     "/modulos/:path*",
     "/biblioteca/:path*",
     "/buscar/:path*",
@@ -86,6 +88,10 @@ export const config = {
     "/foro/:path*",
     "/glosario/:path*",
     "/noticias/:path*",
-    "/mi-tutoria/:path*",
+    "/preguntas-frecuentes/:path*",
+    "/jurisprudencia/:path*",
+    "/videos/:path*",
+    "/infografias/:path*",
+    "/referencias-internacionales/:path*",
   ],
 };

@@ -14,7 +14,6 @@ datasource db {
 
 enum Rol {
   ADMINISTRADOR
-  DOCENTE
   ESTUDIANTE
   INVITADO
 }
@@ -41,9 +40,6 @@ model User {
   publicacionesForo ForumPost[]
   reaccionesForo   ForumReaction[]
   logs             AuditLog[]
-  tutoriasComoDocente    TutoringAssignment[]  @relation("DocenteDe")
-  tutoriasComoEstudiante TutoringAssignment[]  @relation("EstudianteDe")
-  observacionesTutoria   TutoringObservation[]
 
   @@map("users")
 }
@@ -158,6 +154,101 @@ model GlossaryTerm {
   orden      Int
 
   @@map("glossary_terms")
+}
+
+// ============================================================
+// AMPLIACIÓN — PREGUNTAS FRECUENTES (FAQ)
+// ============================================================
+
+model FaqItem {
+  id         String   @id @default(uuid())
+  pregunta   String
+  respuesta  String   @db.Text
+  categoria  String // ej. "Derecho informático", "Protección de datos", "Ciberseguridad"...
+  orden      Int
+  publicado  Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("faq_items")
+}
+
+// ============================================================
+// AMPLIACIÓN — JURISPRUDENCIA INFORMÁTICA
+// ============================================================
+
+model JurisprudenceCase {
+  id               String   @id @default(uuid())
+  nombreCaso       String   @map("nombre_caso")
+  pais             String
+  anio             Int
+  tema             String
+  resumen          String   @db.Text
+  problemaJuridico String   @db.Text @map("problema_juridico")
+  decision         String   @db.Text
+  importancia      String   @db.Text // relevancia para el derecho informático
+  fuenteOficial    String   @map("fuente_oficial")
+  enlaceOficial    String?  @map("enlace_oficial") // nunca inventado — vacío si no está verificado
+  verificado       Boolean  @default(false) // solo true cuando la fuente fue confirmada por un administrador
+  publicado        Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("jurisprudence_cases")
+}
+
+// ============================================================
+// AMPLIACIÓN — VIDEOS E INFOGRAFÍAS REALES
+// ============================================================
+// Recursos gestionables por el administrador (crear/editar/reemplazar/
+// eliminar), siempre con fuente real — nunca contenido ni enlaces
+// ficticios (Secciones 6 y 7 del pedido de ampliación).
+
+model VideoResource {
+  id          String   @id @default(uuid())
+  titulo      String
+  descripcion String   @db.Text
+  categoria   String // ej. "Derecho informático", "Ciberseguridad", "Protección de datos"...
+  url         String // enlace real al video (YouTube institucional/educativo, etc.)
+  fuente      String // canal o institución de origen
+  publicado   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("video_resources")
+}
+
+model Infographic {
+  id          String   @id @default(uuid())
+  titulo      String
+  descripcion String   @db.Text
+  categoria   String
+  url         String // enlace real a la infografía o al documento/página que la contiene
+  fuente      String // institución u organización de origen
+  publicado   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("infographics")
+}
+
+// ============================================================
+// AMPLIACIÓN — REFERENCIAS Y NORMATIVA INTERNACIONAL
+// ============================================================
+
+model InternationalReference {
+  id          String   @id @default(uuid())
+  titulo      String
+  organismo   String // ej. "Consejo de Europa", "UNCITRAL", "Unión Europea"...
+  tema        String // ej. "Protección de datos", "Ciberseguridad", "Comercio electrónico"...
+  categoria   String
+  resumen     String   @db.Text
+  urlOficial  String   @map("url_oficial") // fuente oficial del organismo — nunca inventada
+  publicado   Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("international_references")
 }
 
 // ============================================================
@@ -343,6 +434,16 @@ enum CategoriaDocumento {
   NORMATIVA
 }
 
+// Estado legal vigente de una norma. No se asume nunca sin una fuente
+// verificable (ver Sección 10 del pedido de ampliación) — por defecto una
+// norma nueva se registra como VIGENTE y el administrador la actualiza
+// manualmente si se reforma o deroga.
+enum EstadoNorma {
+  VIGENTE
+  REFORMADA
+  DEROGADA
+}
+
 model LibraryDocument {
   id          String             @id @default(uuid())
   titulo      String
@@ -352,6 +453,20 @@ model LibraryDocument {
   contenido   String             @db.Text // texto indexable para el buscador (resumen/extracto)
   descargas   Int                @default(0)
   createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at") // "Última actualización" del registro dentro de la plataforma — distinta de fechaEmision/fechaReforma
+
+  // Ficha de fuente oficial de la norma (Sección 4 del pedido de ampliación).
+  // Todos son opcionales porque no toda norma cargada previamente tendrá
+  // esta información todavía; la UI debe indicar "requiere revisión
+  // administrativa" cuando falten, en vez de inventar un valor.
+  numeroIdentificacion String?     @map("numero_identificacion") // ej. "Registro Oficial 459"
+  pais                 String?
+  institucionEmisora   String?     @map("institucion_emisora")
+  fechaEmision         DateTime?   @map("fecha_emision")
+  fechaReforma         DateTime?   @map("fecha_reforma")
+  estado               EstadoNorma @default(VIGENTE)
+  fuenteOficial        String?     @map("fuente_oficial") // nombre de la fuente (ej. "Registro Oficial del Ecuador")
+  enlaceOficial        String?     @map("enlace_oficial") // URL verificada al sitio oficial — nunca inventada
 
   articulos   LibraryArticle[]
   favoritos   Favorite[]
@@ -403,7 +518,7 @@ enum TipoLeccion {
 model Course {
   id          String   @id @default(uuid())
   slug        String   @unique
-  numero      Int      @unique // 1 a 8, orden oficial de los módulos
+  numero      Int      @unique // orden oficial de los módulos (1..8 originales; 9+ ampliación)
   titulo      String
   descripcion String
   resumen     String   @db.Text
@@ -416,7 +531,6 @@ model Course {
   lessons     Lesson[]
   enrollments Enrollment[]
   evaluations Evaluation[]
-  tareasTutoria TutoringTask[]
 
   @@map("courses")
 }
@@ -465,153 +579,4 @@ model LessonProgress {
   @@map("lesson_progress")
 }
 
-// ============================================================
-// MÓDULO DE TUTORÍA DOCENTE-ESTUDIANTE
-// ============================================================
 
-enum EstadoTutoria {
-  PENDIENTE
-  ACTIVA
-  RECHAZADA
-  FINALIZADA
-  CANCELADA
-}
-
-enum EstadoTarea {
-  PENDIENTE
-  EN_PROGRESO
-  COMPLETADA
-  VENCIDA
-}
-
-enum PrioridadTarea {
-  BAJA
-  MEDIA
-  ALTA
-}
-
-enum EstadoObjetivo {
-  NO_INICIADO
-  EN_PROGRESO
-  COMPLETADO
-  CANCELADO
-}
-
-enum TipoObservacion {
-  SEGUIMIENTO
-  ACUERDO
-  RECOMENDACION
-  DIFICULTAD
-  AVANCE
-}
-
-enum EstadoReunion {
-  PROGRAMADA
-  REALIZADA
-  CANCELADA
-  REPROGRAMADA
-}
-
-model TutoringAssignment {
-  id                String        @id @default(uuid())
-  docenteId         String        @map("docente_id")
-  estudianteId      String        @map("estudiante_id")
-  estado            EstadoTutoria @default(PENDIENTE)
-  fechaSolicitud    DateTime      @default(now()) @map("fecha_solicitud")
-  fechaAsignacion   DateTime?     @map("fecha_asignacion")
-  fechaFinalizacion DateTime?     @map("fecha_finalizacion")
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
-
-  docente    User @relation("DocenteDe", fields: [docenteId], references: [id], onDelete: Cascade)
-  estudiante User @relation("EstudianteDe", fields: [estudianteId], references: [id], onDelete: Cascade)
-
-  tareas        TutoringTask[]
-  objetivos     TutoringObjective[]
-  observaciones TutoringObservation[]
-  reuniones     TutoringMeeting[]
-  recursos      TutoringResource[]
-
-  // Un mismo docente no puede tener dos solicitudes/relaciones con el mismo
-  // estudiante (evita duplicados). La regla de "un estudiante no puede tener
-  // dos tutorías ACTIVAS de docentes distintos" se valida en el dominio,
-  // porque Prisma no puede expresar unicidad condicionada por estado.
-  @@unique([docenteId, estudianteId])
-  @@index([estudianteId, estado])
-  @@map("tutoring_assignments")
-}
-
-model TutoringTask {
-  id           String         @id @default(uuid())
-  assignmentId String         @map("assignment_id")
-  courseId     String?        @map("course_id")
-  titulo       String
-  descripcion  String         @db.Text
-  fechaLimite  DateTime       @map("fecha_limite")
-  prioridad    PrioridadTarea @default(MEDIA)
-  estado       EstadoTarea    @default(PENDIENTE)
-  createdAt    DateTime       @default(now()) @map("created_at")
-
-  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  course     Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
-
-  @@map("tutoring_tasks")
-}
-
-model TutoringObjective {
-  id            String         @id @default(uuid())
-  assignmentId  String         @map("assignment_id")
-  titulo        String
-  descripcion   String         @db.Text
-  progreso      Int            @default(0)
-  estado        EstadoObjetivo @default(NO_INICIADO)
-  fechaObjetivo DateTime       @map("fecha_objetivo")
-  createdAt     DateTime       @default(now()) @map("created_at")
-
-  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-
-  @@map("tutoring_objectives")
-}
-
-model TutoringObservation {
-  id           String          @id @default(uuid())
-  assignmentId String          @map("assignment_id")
-  autorId      String          @map("autor_id")
-  tipo         TipoObservacion
-  contenido    String          @db.Text
-  createdAt    DateTime        @default(now()) @map("created_at")
-
-  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  autor      User               @relation(fields: [autorId], references: [id], onDelete: Cascade)
-
-  @@map("tutoring_observations")
-}
-
-model TutoringMeeting {
-  id           String        @id @default(uuid())
-  assignmentId String        @map("assignment_id")
-  titulo       String
-  descripcion  String        @db.Text
-  fecha        DateTime
-  duracionMin  Int           @map("duracion_min")
-  estado       EstadoReunion @default(PROGRAMADA)
-  acuerdos     String?       @db.Text
-  createdAt    DateTime      @default(now()) @map("created_at")
-
-  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-
-  @@map("tutoring_meetings")
-}
-
-model TutoringResource {
-  id           String   @id @default(uuid())
-  assignmentId String   @map("assignment_id")
-  titulo       String
-  url          String
-  descripcion  String?
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  assignment TutoringAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-
-  @@map("tutoring_resources")
-}

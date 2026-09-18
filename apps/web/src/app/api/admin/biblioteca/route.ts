@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { PrismaAdminRepository } from "@/modules/admin/infrastructure/prisma-admin.repository";
-import { CrearDocumentoBibliotecaUseCase } from "@/modules/admin/application/admin.use-cases";
+import { GuardarDocumentoBibliotecaUseCase } from "@/modules/admin/application/admin.use-cases";
 
 export async function POST(request: Request) {
   const admin = await requireAdmin();
@@ -11,8 +11,8 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   try {
     const repo = new PrismaAdminRepository(prisma);
-    const useCase = new CrearDocumentoBibliotecaUseCase(repo);
-    await useCase.execute(admin.id, body);
+    const useCase = new GuardarDocumentoBibliotecaUseCase(repo);
+    await useCase.execute(admin.id, null, body);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(

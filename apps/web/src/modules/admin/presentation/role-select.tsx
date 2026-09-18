@@ -6,7 +6,6 @@ import type { Rol } from "@prisma/client";
 
 const ETIQUETAS: Record<Rol, string> = {
   ADMINISTRADOR: "Administrador",
-  DOCENTE: "Docente",
   ESTUDIANTE: "Estudiante",
   INVITADO: "Invitado",
 };

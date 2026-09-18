@@ -36,12 +36,79 @@ export interface AdminGlossaryRow {
   orden: number;
 }
 
+export interface AdminFaqRow {
+  id: string;
+  pregunta: string;
+  respuesta: string;
+  categoria: string;
+  orden: number;
+  publicado: boolean;
+}
+
+export interface AdminJurisprudenceRow {
+  id: string;
+  nombreCaso: string;
+  pais: string;
+  anio: number;
+  tema: string;
+  resumen: string;
+  problemaJuridico: string;
+  decision: string;
+  importancia: string;
+  fuenteOficial: string;
+  enlaceOficial?: string | null;
+  verificado: boolean;
+  publicado: boolean;
+}
+
+export interface AdminVideoRow {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  categoria: string;
+  url: string;
+  fuente: string;
+  publicado: boolean;
+}
+
+export interface AdminInfographicRow {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  categoria: string;
+  url: string;
+  fuente: string;
+  publicado: boolean;
+}
+
+export interface AdminInternationalReferenceRow {
+  id: string;
+  titulo: string;
+  organismo: string;
+  tema: string;
+  categoria: string;
+  resumen: string;
+  urlOficial: string;
+  publicado: boolean;
+}
+
 export interface AdminLibraryRow {
   id: string;
   titulo: string;
   categoria: string;
   tags: string[];
   descargas: number;
+  updatedAt: string;
+  archivoUrl?: string | null;
+  contenido: string;
+  numeroIdentificacion?: string | null;
+  pais?: string | null;
+  institucionEmisora?: string | null;
+  fechaEmision?: string | null;
+  fechaReforma?: string | null;
+  estado: string;
+  fuenteOficial?: string | null;
+  enlaceOficial?: string | null;
 }
 
 export interface AdminCourseRow {
@@ -74,59 +141,4 @@ export interface AdminForumThreadRow {
   createdAt: string;
 }
 
-// ============================================================
-// Creación de evaluaciones y preguntas (Fase 9 — completa el
-// formulario que faltaba: antes solo se podía listar/eliminar)
-// ============================================================
-
-export type AdminTipoPregunta = "VF" | "OPCION_MULTIPLE" | "RELACIONAR" | "COMPLETAR" | "CASO";
-
-export interface AdminPreguntaRow {
-  id: string;
-  tipo: AdminTipoPregunta;
-  enunciado: string;
-  puntaje: number;
-  orden: number;
-}
-
-export interface AdminEvaluationDetalle {
-  id: string;
-  titulo: string;
-  courseId: string | null;
-  tiempoLimite: number;
-  preguntas: AdminPreguntaRow[];
-}
-
-/** Estructura de opciones/respuesta correcta según el tipo — el formulario
- * arma este objeto distinto dependiendo de qué tipo elija el administrador. */
-export interface AdminNuevaPregunta {
-  tipo: AdminTipoPregunta;
-  enunciado: string;
-  retroalimentacion: string;
-  puntaje: number;
-  orden: number;
-  opciones: unknown; // { alternativas: string[] } | { columnaIzquierda; columnaDerecha } | null
-  respuestaCorrecta: unknown; // { esVerdadero } | { indiceCorrecto } | { pares } | { aceptadas }
-}
-
-// ============================================================
-// Creación de casos prácticos (los 9 campos oficiales)
-// ============================================================
-
-export interface AdminNuevoCaso {
-  titulo: string;
-  categoria: string;
-  escenario: string;
-  descripcion: string;
-  normativaAplicable: string;
-  derechosVulnerados: string;
-  sanciones: string;
-  actuacionCorrecta: string;
-  retroalimentacionJuridica: string;
-  nivelDificultad: string;
-  competenciaDesarrollada: string;
-  alternativas: string[];
-  indiceCorrecto: number;
-}
-
-export const ROLES_DISPONIBLES: Rol[] = ["ADMINISTRADOR", "DOCENTE", "ESTUDIANTE", "INVITADO"];
+export const ROLES_DISPONIBLES: Rol[] = ["ADMINISTRADOR", "ESTUDIANTE", "INVITADO"];

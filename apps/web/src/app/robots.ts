@@ -8,7 +8,6 @@ const RUTAS_PRIVADAS = [
   "/dashboard",
   "/perfil",
   "/admin",
-  "/docente",
   "/modulos",
   "/biblioteca",
   "/buscar",
@@ -20,7 +19,11 @@ const RUTAS_PRIVADAS = [
   "/foro",
   "/glosario",
   "/noticias",
-  "/mi-tutoria",
+  "/preguntas-frecuentes",
+  "/jurisprudencia",
+  "/videos",
+  "/infografias",
+  "/referencias-internacionales",
   "/api",
 ];
 
