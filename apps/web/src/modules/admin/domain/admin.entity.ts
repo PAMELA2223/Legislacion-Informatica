@@ -146,11 +146,34 @@ export interface DatosPregunta {
   puntaje: number;
 }
 
+export interface DatosEvaluacion {
+  titulo: string;
+  courseId?: string | null;
+  tipo?: string;
+  tiempoLimite?: number;
+}
+
 export interface AdminCaseStudyRow {
   id: string;
   titulo: string;
   categoria: string;
   totalIntentos: number;
+}
+
+export interface DatosCasoPractico {
+  titulo: string;
+  categoria: "PROTECCION_DATOS" | "DELITOS_INFORMATICOS" | "COMERCIO_ELECTRONICO" | "EVIDENCIA_DIGITAL";
+  escenario: string;
+  descripcion: string;
+  normativaAplicable: string;
+  derechosVulnerados: string;
+  sanciones: string;
+  actuacionCorrecta: string;
+  retroalimentacionJuridica: string;
+  nivelDificultad: "BASICO" | "INTERMEDIO" | "AVANZADO";
+  competenciaDesarrollada: string;
+  opciones: unknown;
+  indiceCorrecto: number;
 }
 
 export interface AdminForumThreadRow {

@@ -1,8 +1,8 @@
-import { getAuthenticatedUser } from "@/lib/get-authenticated-user";
 import { redirect } from "next/navigation";
+import { getAuthenticatedUser } from "@/lib/get-authenticated-user";
 import { CaseStudyForm } from "@/modules/admin/presentation/case-study-form";
 
-export default async function NuevoCasoPage() {
+export default async function NuevoCasoPracticoPage() {
   const user = await getAuthenticatedUser();
   if (!user) redirect("/login");
 

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Plus } from "lucide-react";
 import { getAuthenticatedUser } from "@/lib/get-authenticated-user";
 import { prisma } from "@/lib/prisma";
 import { PrismaAdminRepository } from "@/modules/admin/infrastructure/prisma-admin.repository";
 import { ListarEvaluacionesAdminUseCase } from "@/modules/admin/application/admin.use-cases";
 import { DeleteButton } from "@/modules/admin/presentation/delete-button";
+import { Button } from "@/components/ui/button";
 
 export default async function AdminEvaluacionesPage() {
   const user = await getAuthenticatedUser();
@@ -15,7 +17,15 @@ export default async function AdminEvaluacionesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-1">Evaluaciones</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold text-foreground">Evaluaciones</h1>
+        <Link href="/admin/evaluaciones/nueva">
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva evaluación
+          </Button>
+        </Link>
+      </div>
       <p className="text-sm text-muted-foreground mb-8">
         Entra a una evaluación para ver y agregar sus preguntas. Desde aquí
         también puedes eliminar evaluaciones obsoletas.

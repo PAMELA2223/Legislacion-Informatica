@@ -4,10 +4,12 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
 import type {
   AdminCaseStudyRow,
+  DatosCasoPractico,
   AdminCourseRow,
   AdminEvaluationRow,
   AdminEvaluationDetailRow,
   DatosPregunta,
+  DatosEvaluacion,
   AdminFaqRow,
   AdminForumThreadRow,
   AdminGlossaryRow,
@@ -256,6 +258,19 @@ export class PrismaAdminRepository implements IAdminRepository {
     }));
   }
 
+  async crearEvaluacion(actorId: string, data: DatosEvaluacion): Promise<{ id: string; titulo: string }> {
+    const evaluacion = await this.prisma.evaluation.create({
+      data: {
+        titulo: data.titulo,
+        courseId: data.courseId ?? null,
+        ...(data.tipo ? { tipo: data.tipo } : {}),
+        ...(data.tiempoLimite !== undefined ? { tiempoLimite: data.tiempoLimite } : {}),
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "evaluacion", evaluacion.id);
+    return { id: evaluacion.id, titulo: evaluacion.titulo };
+  }
+
   async obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetailRow | null> {
     const evaluacion = await this.prisma.evaluation.findUnique({
       where: { id },
@@ -311,6 +326,29 @@ export class PrismaAdminRepository implements IAdminRepository {
       categoria: c.categoria,
       totalIntentos: c._count.intentos,
     }));
+  }
+
+  async crearCaso(actorId: string, data: DatosCasoPractico): Promise<void> {
+    const totalActual = await this.prisma.caseStudy.count();
+    const caso = await this.prisma.caseStudy.create({
+      data: {
+        titulo: data.titulo,
+        categoria: data.categoria,
+        escenario: data.escenario,
+        descripcion: data.descripcion,
+        normativaAplicable: data.normativaAplicable,
+        derechosVulnerados: data.derechosVulnerados,
+        sanciones: data.sanciones,
+        actuacionCorrecta: data.actuacionCorrecta,
+        retroalimentacionJuridica: data.retroalimentacionJuridica,
+        nivelDificultad: data.nivelDificultad,
+        competenciaDesarrollada: data.competenciaDesarrollada,
+        opciones: data.opciones as Prisma.InputJsonValue,
+        indiceCorrecto: data.indiceCorrecto,
+        orden: totalActual + 1,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "caso_practico", caso.id);
   }
 
   async eliminarCaso(actorId: string, id: string): Promise<void> {

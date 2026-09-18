@@ -3,6 +3,8 @@ import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin
 import type {
   AdminFaqRow,
   DatosPregunta,
+  DatosEvaluacion,
+  DatosCasoPractico,
   AdminGlossaryRow,
   AdminInfographicRow,
   AdminInternationalReferenceRow,
@@ -158,6 +160,14 @@ export class ListarEvaluacionesAdminUseCase {
   }
 }
 
+export class CrearEvaluacionUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, data: DatosEvaluacion) {
+    if (!data.titulo?.trim()) throw new Error("El título es obligatorio.");
+    return this.repo.crearEvaluacion(actorId, data);
+  }
+}
+
 export class ObtenerEvaluacionConPreguntasUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute(id: string) {
@@ -196,6 +206,29 @@ export class ListarCasosAdminUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute() {
     return this.repo.listarCasos();
+  }
+}
+
+export class CrearCasoUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, data: DatosCasoPractico) {
+    if (!data.titulo?.trim()) throw new Error("El título es obligatorio.");
+    if (!data.escenario?.trim()) throw new Error("El escenario es obligatorio.");
+    if (!data.descripcion?.trim()) throw new Error("La descripción es obligatoria.");
+    if (!data.normativaAplicable?.trim()) throw new Error("La normativa aplicable es obligatoria.");
+    if (!data.derechosVulnerados?.trim()) throw new Error("Los derechos vulnerados son obligatorios.");
+    if (!data.sanciones?.trim()) throw new Error("Las sanciones son obligatorias.");
+    if (!data.actuacionCorrecta?.trim()) throw new Error("La actuación correcta es obligatoria.");
+    if (!data.retroalimentacionJuridica?.trim()) {
+      throw new Error("La retroalimentación jurídica es obligatoria.");
+    }
+    if (!data.competenciaDesarrollada?.trim()) {
+      throw new Error("La competencia desarrollada es obligatoria.");
+    }
+    if (data.indiceCorrecto === undefined || data.indiceCorrecto === null) {
+      throw new Error("Debe indicarse cuál opción es la correcta.");
+    }
+    return this.repo.crearCaso(actorId, data);
   }
 }
 

@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { getAuthenticatedUser } from "@/lib/get-authenticated-user";
 import { prisma } from "@/lib/prisma";
 import { PrismaAdminRepository } from "@/modules/admin/infrastructure/prisma-admin.repository";
 import { ListarCasosAdminUseCase } from "@/modules/admin/application/admin.use-cases";
 import { DeleteButton } from "@/modules/admin/presentation/delete-button";
 import { ETIQUETAS_CATEGORIA_CASO } from "@/modules/case-studies/domain/case-study.entity";
+import { Button } from "@/components/ui/button";
 
 export default async function AdminCasosPage() {
   const user = await getAuthenticatedUser();
@@ -15,11 +18,17 @@ export default async function AdminCasosPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-foreground mb-1">Casos prácticos</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold text-foreground">Casos prácticos</h1>
+        <Link href="/admin/casos-practicos/nuevo">
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo caso
+          </Button>
+        </Link>
+      </div>
       <p className="text-sm text-muted-foreground mb-8">
-        La creación de nuevos casos (con sus 9 campos jurídicos) se gestiona
-        por ahora vía el seed o Prisma Studio. Aquí puedes ver el uso y
-        eliminar casos obsoletos.
+        Aquí puedes crear nuevos casos, ver su uso y eliminar los obsoletos.
       </p>
 
       <div className="flex flex-col gap-2">
