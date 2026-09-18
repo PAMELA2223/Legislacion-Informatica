@@ -30,7 +30,7 @@ base de datos.
   verifica que exista una sesión válida para las rutas protegidas. No
   puede consultar Prisma (no soporta drivers de PostgreSQL en el edge).
 - **Autorización por rol (RBAC)**: la fuente de verdad del rol
-  (`ADMINISTRADOR | DOCENTE | ESTUDIANTE | INVITADO`) es siempre
+  (`ADMINISTRADOR | ESTUDIANTE | INVITADO`) es siempre
   **Prisma/PostgreSQL**, consultada en cada página/layout de servidor vía
   `src/lib/authorization.ts` (`requireAutenticado`, `requireRole`, etc.),
   nunca el JWT de Supabase ni nada manipulable desde el cliente.
@@ -138,7 +138,7 @@ respeten.
   credenciales reales de un proyecto Supabase): flujos de
   `infrastructure/` (Supabase, Prisma) y Route Handlers de `src/app/api`.
   Para estos casos existen los scripts de verificación manual ya
-  incluidos en el proyecto (`DIAGNOSTICAR.bat`, `VERIFICAR-TUTORIA.bat`).
+  incluidos en el proyecto (`DIAGNOSTICAR.bat`).
 - CI ejecuta lint + typecheck + test + build en cada push/PR (ver 2.9).
 
 ### 2.8 Documentación

@@ -2,6 +2,7 @@ import type { Rol } from "@prisma/client";
 import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
 import type {
   AdminFaqRow,
+  DatosPregunta,
   AdminGlossaryRow,
   AdminInfographicRow,
   AdminInternationalReferenceRow,
@@ -157,10 +158,37 @@ export class ListarEvaluacionesAdminUseCase {
   }
 }
 
+export class ObtenerEvaluacionConPreguntasUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(id: string) {
+    const evaluacion = await this.repo.obtenerEvaluacionConPreguntas(id);
+    if (!evaluacion) throw new Error("Evaluación no encontrada.");
+    return evaluacion;
+  }
+}
+
 export class EliminarEvaluacionUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute(actorId: string, id: string) {
     return this.repo.eliminarEvaluacion(actorId, id);
+  }
+}
+
+export class CrearPreguntaUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, evaluationId: string, data: DatosPregunta) {
+    if (!data.enunciado?.trim()) throw new Error("El enunciado es obligatorio.");
+    if (!data.retroalimentacion?.trim()) throw new Error("La retroalimentación es obligatoria.");
+    if (!data.puntaje || data.puntaje < 1) throw new Error("El puntaje debe ser al menos 1.");
+    if (!data.respuestaCorrecta) throw new Error("La respuesta correcta es obligatoria.");
+    return this.repo.crearPregunta(actorId, evaluationId, data);
+  }
+}
+
+export class EliminarPreguntaUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string) {
+    return this.repo.eliminarPregunta(actorId, id);
   }
 }
 

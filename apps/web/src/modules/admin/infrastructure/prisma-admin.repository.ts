@@ -1,4 +1,4 @@
-import type { PrismaClient, Rol } from "@prisma/client";
+import type { PrismaClient, Prisma, Rol } from "@prisma/client";
 import { registrarLog } from "@/lib/audit-log";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
@@ -6,6 +6,8 @@ import type {
   AdminCaseStudyRow,
   AdminCourseRow,
   AdminEvaluationRow,
+  AdminEvaluationDetailRow,
+  DatosPregunta,
   AdminFaqRow,
   AdminForumThreadRow,
   AdminGlossaryRow,
@@ -254,9 +256,49 @@ export class PrismaAdminRepository implements IAdminRepository {
     }));
   }
 
+  async obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetailRow | null> {
+    const evaluacion = await this.prisma.evaluation.findUnique({
+      where: { id },
+      include: { preguntas: { orderBy: { orden: "asc" } } },
+    });
+    if (!evaluacion) return null;
+    return {
+      id: evaluacion.id,
+      titulo: evaluacion.titulo,
+      tiempoLimite: evaluacion.tiempoLimite,
+      preguntas: evaluacion.preguntas.map((p) => ({
+        id: p.id,
+        tipo: p.tipo,
+        enunciado: p.enunciado,
+      })),
+    };
+  }
+
   async eliminarEvaluacion(actorId: string, id: string): Promise<void> {
     await this.prisma.evaluation.delete({ where: { id } });
     await registrarLog(this.prisma, actorId, "ELIMINAR", "evaluacion", id);
+  }
+
+  async crearPregunta(actorId: string, evaluationId: string, data: DatosPregunta): Promise<void> {
+    const totalActual = await this.prisma.question.count({ where: { evaluationId } });
+    const pregunta = await this.prisma.question.create({
+      data: {
+        evaluationId,
+        tipo: data.tipo,
+        enunciado: data.enunciado,
+        opciones: data.opciones as Prisma.InputJsonValue,
+        respuestaCorrecta: data.respuestaCorrecta as Prisma.InputJsonValue,
+        retroalimentacion: data.retroalimentacion,
+        puntaje: data.puntaje,
+        orden: totalActual + 1,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "pregunta", pregunta.id);
+  }
+
+  async eliminarPregunta(actorId: string, id: string): Promise<void> {
+    await this.prisma.question.delete({ where: { id } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "pregunta", id);
   }
 
   async listarCasos(): Promise<AdminCaseStudyRow[]> {

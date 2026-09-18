@@ -126,6 +126,26 @@ export interface AdminEvaluationRow {
   totalIntentos: number;
 }
 
+export interface AdminEvaluationDetailRow {
+  id: string;
+  titulo: string;
+  tiempoLimite: number;
+  preguntas: {
+    id: string;
+    tipo: string;
+    enunciado: string;
+  }[];
+}
+
+export interface DatosPregunta {
+  tipo: "VF" | "OPCION_MULTIPLE" | "RELACIONAR" | "COMPLETAR" | "CASO";
+  enunciado: string;
+  opciones: unknown;
+  respuestaCorrecta: unknown;
+  retroalimentacion: string;
+  puntaje: number;
+}
+
 export interface AdminCaseStudyRow {
   id: string;
   titulo: string;

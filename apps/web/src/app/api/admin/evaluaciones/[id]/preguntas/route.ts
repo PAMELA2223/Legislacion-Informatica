@@ -8,7 +8,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: evaluationId } = await params;
+  const { id } = await params;
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
 
@@ -16,7 +16,7 @@ export async function POST(
   try {
     const repo = new PrismaAdminRepository(prisma);
     const useCase = new CrearPreguntaUseCase(repo);
-    await useCase.execute(admin.id, evaluationId, body);
+    await useCase.execute(admin.id, id, body);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
