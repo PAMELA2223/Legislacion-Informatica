@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "@/lib/get-authenticated-user";
 import { prisma } from "@/lib/prisma";
@@ -15,9 +16,8 @@ export default async function AdminCursosPage() {
     <div>
       <h1 className="text-2xl font-bold text-foreground mb-1">Módulos educativos</h1>
       <p className="text-sm text-muted-foreground mb-8">
-        Vista de solo lectura. La edición del contenido pedagógico (lecciones,
-        videos, PDFs) se gestiona por ahora vía el seed o Prisma Studio, dada
-        la estructura anidada de cada módulo.
+        Entra a un módulo para editar sus lecciones: cambiar el video, el PDF,
+        la infografía, o agregar lecciones nuevas.
       </p>
 
       <div className="rounded-2xl border border-border bg-surface overflow-hidden">
@@ -33,7 +33,9 @@ export default async function AdminCursosPage() {
             {cursos.map((c, i) => (
               <tr key={c.id} className={i % 2 === 0 ? "bg-surface" : "bg-background-secondary/40"}>
                 <td className="px-4 py-3 font-medium text-foreground">
-                  {c.numero}. {c.titulo}
+                  <Link href={`/admin/cursos/${c.id}`} className="hover:text-primary transition-colors">
+                    {c.numero}. {c.titulo}
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{c.totalLecciones}</td>
                 <td className="px-4 py-3 text-muted-foreground">{c.totalInscritos}</td>

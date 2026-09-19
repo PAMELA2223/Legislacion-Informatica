@@ -5,6 +5,7 @@ import type {
   DatosPregunta,
   DatosEvaluacion,
   DatosCasoPractico,
+  DatosLeccion,
   AdminGlossaryRow,
   AdminInfographicRow,
   AdminInternationalReferenceRow,
@@ -150,6 +151,67 @@ export class ListarCursosAdminUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute() {
     return this.repo.listarCursos();
+  }
+}
+
+export class ObtenerCursoConLeccionesUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(id: string) {
+    const curso = await this.repo.obtenerCursoConLecciones(id);
+    if (!curso) throw new Error("Módulo no encontrado.");
+    return curso;
+  }
+}
+
+// Tipos de lección cuyo contenido vive en una URL (video/imagen/audio/PDF).
+// TEXTO usa el campo "contenido" en su lugar; el resto (LINEA_TIEMPO,
+// MAPA_CONCEPTUAL, PRESENTACION) también admite una URL si se desea.
+const TIPOS_CON_URL = new Set([
+  "VIDEO",
+  "PDF",
+  "INFOGRAFIA",
+  "PODCAST",
+  "LINEA_TIEMPO",
+  "MAPA_CONCEPTUAL",
+  "PRESENTACION",
+]);
+
+function validarDatosLeccion(data: DatosLeccion) {
+  if (!data.titulo?.trim()) throw new Error("El título de la lección es obligatorio.");
+  const url = data.urlRecurso?.trim();
+  if (url && TIPOS_CON_URL.has(data.tipo)) {
+    const esUrlValida = /^https?:\/\//i.test(url) || url.startsWith("/");
+    if (!esUrlValida) {
+      throw new Error(
+        "El enlace debe ser una URL completa (http:// o https://) o una ruta interna que empiece con /."
+      );
+    }
+  }
+  if (data.tipo === "TEXTO" && !data.contenido?.trim()) {
+    throw new Error("Las lecciones de tipo Texto necesitan contenido.");
+  }
+}
+
+export class ActualizarLeccionUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, leccionId: string, data: DatosLeccion) {
+    validarDatosLeccion(data);
+    return this.repo.actualizarLeccion(actorId, leccionId, data);
+  }
+}
+
+export class CrearLeccionUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, courseId: string, data: DatosLeccion) {
+    validarDatosLeccion(data);
+    return this.repo.crearLeccion(actorId, courseId, data);
+  }
+}
+
+export class EliminarLeccionUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, leccionId: string) {
+    return this.repo.eliminarLeccion(actorId, leccionId);
   }
 }
 

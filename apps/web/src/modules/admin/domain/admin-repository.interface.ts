@@ -3,6 +3,8 @@ import type {
   AdminCaseStudyRow,
   DatosCasoPractico,
   AdminCourseRow,
+  AdminCourseDetailRow,
+  DatosLeccion,
   AdminEvaluationRow,
   AdminEvaluationDetailRow,
   DatosEvaluacion,
@@ -70,6 +72,10 @@ export interface IAdminRepository {
 
   // Cursos, evaluaciones y casos (solo lectura + eliminación)
   listarCursos(): Promise<AdminCourseRow[]>;
+  obtenerCursoConLecciones(id: string): Promise<AdminCourseDetailRow | null>;
+  actualizarLeccion(actorId: string, leccionId: string, data: DatosLeccion): Promise<void>;
+  crearLeccion(actorId: string, courseId: string, data: DatosLeccion): Promise<void>;
+  eliminarLeccion(actorId: string, leccionId: string): Promise<void>;
   listarEvaluaciones(): Promise<AdminEvaluationRow[]>;
   crearEvaluacion(actorId: string, data: DatosEvaluacion): Promise<{ id: string; titulo: string }>;
   obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetailRow | null>;

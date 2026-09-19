@@ -119,6 +119,40 @@ export interface AdminCourseRow {
   totalInscritos: number;
 }
 
+export interface AdminLessonRow {
+  id: string;
+  titulo: string;
+  tipo: string;
+  urlRecurso: string | null;
+  contenido: string | null;
+  orden: number;
+}
+
+export interface AdminCourseDetailRow {
+  id: string;
+  numero: number;
+  titulo: string;
+  descripcion: string;
+  lecciones: AdminLessonRow[];
+}
+
+export type TipoLeccion =
+  | "VIDEO"
+  | "PDF"
+  | "INFOGRAFIA"
+  | "TEXTO"
+  | "PODCAST"
+  | "LINEA_TIEMPO"
+  | "MAPA_CONCEPTUAL"
+  | "PRESENTACION";
+
+export interface DatosLeccion {
+  titulo: string;
+  tipo: TipoLeccion;
+  urlRecurso?: string | null;
+  contenido?: string | null;
+}
+
 export interface AdminEvaluationRow {
   id: string;
   titulo: string;

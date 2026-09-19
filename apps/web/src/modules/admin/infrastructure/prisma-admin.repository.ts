@@ -6,6 +6,8 @@ import type {
   AdminCaseStudyRow,
   DatosCasoPractico,
   AdminCourseRow,
+  AdminCourseDetailRow,
+  DatosLeccion,
   AdminEvaluationRow,
   AdminEvaluationDetailRow,
   DatosPregunta,
@@ -244,6 +246,61 @@ export class PrismaAdminRepository implements IAdminRepository {
       totalLecciones: c._count.lessons,
       totalInscritos: c._count.enrollments,
     }));
+  }
+
+  async obtenerCursoConLecciones(id: string): Promise<AdminCourseDetailRow | null> {
+    const curso = await this.prisma.course.findUnique({
+      where: { id },
+      include: { lessons: { orderBy: { orden: "asc" } } },
+    });
+    if (!curso) return null;
+    return {
+      id: curso.id,
+      numero: curso.numero,
+      titulo: curso.titulo,
+      descripcion: curso.descripcion,
+      lecciones: curso.lessons.map((l) => ({
+        id: l.id,
+        titulo: l.titulo,
+        tipo: l.tipo,
+        urlRecurso: l.urlRecurso,
+        contenido: l.contenido,
+        orden: l.orden,
+      })),
+    };
+  }
+
+  async actualizarLeccion(actorId: string, leccionId: string, data: DatosLeccion): Promise<void> {
+    await this.prisma.lesson.update({
+      where: { id: leccionId },
+      data: {
+        titulo: data.titulo,
+        tipo: data.tipo,
+        urlRecurso: data.urlRecurso?.trim() || null,
+        contenido: data.contenido?.trim() || null,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "EDITAR", "leccion", leccionId);
+  }
+
+  async crearLeccion(actorId: string, courseId: string, data: DatosLeccion): Promise<void> {
+    const totalActual = await this.prisma.lesson.count({ where: { courseId } });
+    const leccion = await this.prisma.lesson.create({
+      data: {
+        courseId,
+        titulo: data.titulo,
+        tipo: data.tipo,
+        urlRecurso: data.urlRecurso?.trim() || null,
+        contenido: data.contenido?.trim() || null,
+        orden: totalActual + 1,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "leccion", leccion.id);
+  }
+
+  async eliminarLeccion(actorId: string, leccionId: string): Promise<void> {
+    await this.prisma.lesson.delete({ where: { id: leccionId } });
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "leccion", leccionId);
   }
 
   async listarEvaluaciones(): Promise<AdminEvaluationRow[]> {
