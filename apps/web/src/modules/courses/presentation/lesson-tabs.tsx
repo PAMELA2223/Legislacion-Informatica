@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Video, FileText, Image as ImageIcon, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getYoutubeEmbedUrl } from "@/lib/youtube";
 
 const ICONOS: Record<string, React.ReactNode> = {
   VIDEO: <Video className="w-4 h-4" />,
@@ -67,9 +68,18 @@ export function LessonTabs({
         {leccion.tipo === "VIDEO" && (
           <div className="aspect-video rounded-xl bg-foreground/5 flex items-center justify-center text-muted-foreground text-sm">
             {leccion.urlRecurso ? (
-              <video controls className="w-full h-full rounded-xl">
-                <source src={leccion.urlRecurso} />
-              </video>
+              getYoutubeEmbedUrl(leccion.urlRecurso) ? (
+                <iframe
+                  src={getYoutubeEmbedUrl(leccion.urlRecurso)!}
+                  className="w-full h-full rounded-xl"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video controls className="w-full h-full rounded-xl">
+                  <source src={leccion.urlRecurso} />
+                </video>
+              )
             ) : (
               "Video pendiente de cargar"
             )}

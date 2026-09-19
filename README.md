@@ -2,8 +2,7 @@
 
 Plataforma educativa web sobre legislación informática del Ecuador:
 módulos formativos, biblioteca jurídica, evaluaciones, casos prácticos,
-autoevaluación de competencias, tutoría docente-estudiante y
-gamificación.
+autoevaluación de competencias y gamificación.
 
 > Documentación extendida en [`/docs`](./docs):
 > - [`docs/manual-tecnico.md`](./docs/manual-tecnico.md) — arquitectura, stack, despliegue.

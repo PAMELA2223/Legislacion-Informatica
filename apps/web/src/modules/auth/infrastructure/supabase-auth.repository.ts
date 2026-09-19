@@ -40,7 +40,18 @@ export class SupabaseAuthRepository implements IAuthRepository {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
-      options: { data: { nombre, rol: "ESTUDIANTE" } },
+      options: {
+        data: { nombre, rol: "ESTUDIANTE" },
+        // Explícito en vez de depender solo del "Site URL" configurado en
+        // el panel de Supabase (Authentication → URL Configuration): así,
+        // el correo de confirmación siempre apunta al dominio correcto
+        // según en qué entorno corre la app (local vs. producción), leído
+        // de NEXT_PUBLIC_SITE_URL. El panel de Supabase sigue necesitando
+        // tener este mismo dominio en su lista de "Redirect URLs" permitida
+        // (por seguridad, Supabase rechaza redirects a dominios no listados
+        // ahí aunque el código los pida).
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login`,
+      },
     });
     if (error) throw new Error(error.message);
     if (!data.user) throw new Error("No se pudo crear el usuario.");
