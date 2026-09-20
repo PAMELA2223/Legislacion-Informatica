@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Video, FileText, Image as ImageIcon, Headphones } from "lucide-react";
+import { Video, FileText, Image as ImageIcon, Headphones, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getYoutubeEmbedUrl } from "@/lib/youtube";
 
@@ -34,6 +34,7 @@ export function LessonTabs({
 }) {
   const [activa, setActiva] = useState(0);
   const [cargando, setCargando] = useState(false);
+  const [imagenRota, setImagenRota] = useState<string | null>(null);
   const leccion = lecciones[activa];
 
   async function handleCompletar() {
@@ -87,22 +88,66 @@ export function LessonTabs({
         )}
 
         {leccion.tipo === "PDF" && (
-          <div className="aspect-[4/3] rounded-xl bg-foreground/5 flex items-center justify-center text-muted-foreground text-sm">
-            {leccion.urlRecurso ? (
-              <iframe src={leccion.urlRecurso} className="w-full h-full rounded-xl" />
-            ) : (
-              "PDF pendiente de cargar"
+          <div className="flex flex-col gap-2">
+            <div className="aspect-[4/3] rounded-xl bg-foreground/5 flex items-center justify-center text-muted-foreground text-sm">
+              {leccion.urlRecurso ? (
+                <iframe src={leccion.urlRecurso} className="w-full h-full rounded-xl" />
+              ) : (
+                "PDF pendiente de cargar"
+              )}
+            </div>
+            {leccion.urlRecurso && (
+              <a
+                href={leccion.urlRecurso}
+                target="_blank"
+                rel="noreferrer"
+                className="self-start inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                Abrir PDF en una pestaña nueva <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             )}
+            <p className="text-xs text-muted-foreground">
+              Algunas fuentes (sitios de gobierno, etc.) no permiten mostrar su PDF
+              embebido aquí por seguridad — en ese caso, el recuadro de arriba se
+              verá en blanco. Usa el enlace de arriba para abrirlo directamente.
+            </p>
           </div>
         )}
 
         {(leccion.tipo === "INFOGRAFIA" || leccion.tipo === "MAPA_CONCEPTUAL") && (
-          <div className="aspect-[4/3] rounded-xl bg-foreground/5 flex items-center justify-center text-muted-foreground text-sm">
-            {leccion.urlRecurso ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={leccion.urlRecurso} alt={leccion.titulo} className="w-full h-full object-contain rounded-xl" />
-            ) : (
-              "Recurso visual pendiente de cargar"
+          <div className="flex flex-col gap-2">
+            <div className="aspect-[4/3] rounded-xl bg-foreground/5 flex items-center justify-center text-muted-foreground text-sm p-4 text-center">
+              {leccion.urlRecurso ? (
+                imagenRota === leccion.urlRecurso ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <ImageIcon className="w-8 h-8 opacity-50" />
+                    <span>
+                      Esta imagen no se puede mostrar aquí (el sitio de origen bloquea
+                      que se embeba). Ábrela directamente con el enlace de abajo.
+                    </span>
+                  </div>
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={leccion.urlRecurso}
+                    alt={leccion.titulo}
+                    className="w-full h-full object-contain rounded-xl"
+                    onError={() => setImagenRota(leccion.urlRecurso ?? null)}
+                  />
+                )
+              ) : (
+                "Recurso visual pendiente de cargar"
+              )}
+            </div>
+            {leccion.urlRecurso && (
+              <a
+                href={leccion.urlRecurso}
+                target="_blank"
+                rel="noreferrer"
+                className="self-start inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+              >
+                Ver imagen en una pestaña nueva <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             )}
           </div>
         )}
