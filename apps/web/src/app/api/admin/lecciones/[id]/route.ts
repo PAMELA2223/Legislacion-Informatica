@@ -37,8 +37,12 @@ export async function DELETE(
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
 
-  const repo = new PrismaAdminRepository(prisma);
-  const useCase = new EliminarLeccionUseCase(repo);
-  await useCase.execute(admin.id, id);
-  return NextResponse.json({ ok: true });
+  try {
+    const repo = new PrismaAdminRepository(prisma);
+    const useCase = new EliminarLeccionUseCase(repo);
+    await useCase.execute(admin.id, id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Error al eliminar la lección." }, { status: 409 });
+  }
 }

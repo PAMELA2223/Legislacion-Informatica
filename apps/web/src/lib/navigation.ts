@@ -34,9 +34,11 @@ const SECCIONES: SeccionNav[] = [
     enlaces: [
       { href: "/modulos", label: "Módulos", roles: ["ESTUDIANTE"], icon: "BookOpen" },
       { href: "/biblioteca", label: "Biblioteca", roles: ["ESTUDIANTE"], icon: "Library" },
-      { href: "/evaluaciones", label: "Evaluaciones", roles: ["ESTUDIANTE"], icon: "ClipboardCheck" },
       { href: "/casos-practicos", label: "Casos prácticos", roles: ["ESTUDIANTE"], icon: "Scale" },
       { href: "/autoevaluacion", label: "Autoevaluación", roles: ["ESTUDIANTE"], icon: "ClipboardList" },
+      // "Lo más destacado" reemplaza a las antiguas categorías "Videos" e
+      // "Infografías". "Evaluaciones" ya no es una categoría: vive en cada módulo.
+      { href: "/destacados", label: "Lo más destacado", roles: ["ESTUDIANTE"], icon: "Sparkles" },
     ],
   },
   {
@@ -47,8 +49,6 @@ const SECCIONES: SeccionNav[] = [
       { href: "/retos", label: "Retos", roles: ["ESTUDIANTE"], icon: "Target" },
       { href: "/glosario", label: "Glosario", roles: ["ESTUDIANTE"], icon: "BookMarked" },
       { href: "/jurisprudencia", label: "Jurisprudencia", roles: ["ESTUDIANTE"], icon: "Gavel" },
-      { href: "/videos", label: "Videos", roles: ["ESTUDIANTE"], icon: "PlayCircle" },
-      { href: "/infografias", label: "Infografías", roles: ["ESTUDIANTE"], icon: "ImageIcon" },
       { href: "/referencias-internacionales", label: "Referencias internacionales", roles: ["ESTUDIANTE"], icon: "Globe2" },
       { href: "/noticias", label: "Noticias", roles: ["ESTUDIANTE"], icon: "Newspaper" },
       { href: "/preguntas-frecuentes", label: "Preguntas frecuentes", roles: ["ESTUDIANTE"], icon: "HelpCircle" },
@@ -104,14 +104,14 @@ export const ITEMS_SIDEBAR_ADMIN: EnlaceNav[] = [
   { href: "/admin/usuarios", label: "Usuarios y roles", roles: ["ADMINISTRADOR"], icon: "Users" },
   { href: "/admin/cursos", label: "Módulos", roles: ["ADMINISTRADOR"], icon: "GraduationCap" },
   { href: "/admin/biblioteca", label: "Biblioteca", roles: ["ADMINISTRADOR"], icon: "Library" },
+  { href: "/admin/autoevaluaciones", label: "Autoevaluaciones", roles: ["ADMINISTRADOR"], icon: "ClipboardCheck" },
   { href: "/admin/evaluaciones", label: "Evaluaciones", roles: ["ADMINISTRADOR"], icon: "ClipboardList" },
+  { href: "/admin/destacados", label: "Lo más destacado", roles: ["ADMINISTRADOR"], icon: "Sparkles" },
   { href: "/admin/casos-practicos", label: "Casos prácticos", roles: ["ADMINISTRADOR"], icon: "Scale" },
   { href: "/admin/glosario", label: "Glosario", roles: ["ADMINISTRADOR"], icon: "BookMarked" },
   { href: "/admin/noticias", label: "Noticias", roles: ["ADMINISTRADOR"], icon: "Newspaper" },
   { href: "/admin/faq", label: "Preguntas frecuentes", roles: ["ADMINISTRADOR"], icon: "HelpCircle" },
   { href: "/admin/jurisprudencia", label: "Jurisprudencia", roles: ["ADMINISTRADOR"], icon: "Gavel" },
-  { href: "/admin/videos", label: "Videos", roles: ["ADMINISTRADOR"], icon: "PlayCircle" },
-  { href: "/admin/infografias", label: "Infografías", roles: ["ADMINISTRADOR"], icon: "ImageIcon" },
   { href: "/admin/referencias-internacionales", label: "Referencias internacionales", roles: ["ADMINISTRADOR"], icon: "Globe2" },
   { href: "/admin/foro", label: "Foro", roles: ["ADMINISTRADOR"], icon: "MessagesSquare" },
   { href: "/admin/logs", label: "Logs", roles: ["ADMINISTRADOR"], icon: "ScrollText" },
@@ -125,4 +125,46 @@ export function obtenerItemsSidebar(rol: Rol): EnlaceNav[] {
 
   const perfil: EnlaceNav = { href: "/perfil", label: "Mi perfil", roles: [rol], icon: "User" };
   return [...obtenerEnlacesPlanos(rol), perfil];
+}
+
+// Agrupación del menú lateral por secciones, para que una lista larga sea
+// fácil de recorrer. Usa exactamente los mismos enlaces de arriba.
+const GRUPOS_ADMIN: { titulo: string; hrefs: string[] }[] = [
+  { titulo: "Panel", hrefs: ["/admin/estadisticas", "/admin/usuarios"] },
+  {
+    titulo: "Aprendizaje",
+    hrefs: ["/admin/cursos", "/admin/autoevaluaciones", "/admin/evaluaciones", "/admin/casos-practicos", "/admin/destacados"],
+  },
+  {
+    titulo: "Recursos y comunidad",
+    hrefs: [
+      "/admin/biblioteca",
+      "/admin/glosario",
+      "/admin/jurisprudencia",
+      "/admin/referencias-internacionales",
+      "/admin/noticias",
+      "/admin/faq",
+      "/admin/foro",
+    ],
+  },
+  { titulo: "Sistema", hrefs: ["/admin/logs"] },
+];
+
+/** Secciones del sidebar lateral para un rol (con encabezados). */
+export function obtenerSeccionesSidebar(rol: Rol): SeccionNav[] {
+  if (rol === "ADMINISTRADOR") {
+    const usados = new Set(GRUPOS_ADMIN.flatMap((g) => g.hrefs));
+    const secciones = GRUPOS_ADMIN.map((g) => ({
+      titulo: g.titulo,
+      enlaces: g.hrefs
+        .map((h) => ITEMS_SIDEBAR_ADMIN.find((i) => i.href === h))
+        .filter((i): i is EnlaceNav => Boolean(i)),
+    }));
+    // Cualquier enlace nuevo que no esté agrupado no se pierde: va al final.
+    const resto = ITEMS_SIDEBAR_ADMIN.filter((i) => !usados.has(i.href));
+    if (resto.length) secciones.push({ titulo: "Otros", enlaces: resto });
+    return secciones.filter((s) => s.enlaces.length > 0);
+  }
+  const perfil: EnlaceNav = { href: "/perfil", label: "Mi perfil", roles: [rol], icon: "User" };
+  return [...obtenerSeccionesNavegacion(rol), { titulo: "Cuenta", enlaces: [perfil] }];
 }

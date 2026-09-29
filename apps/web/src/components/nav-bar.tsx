@@ -8,7 +8,6 @@ import { useTheme } from "next-themes";
 import type { Rol } from "@prisma/client";
 import { createSupabaseBrowserClient } from "@/lib/supabase-client";
 import {
-  obtenerEnlacesPlanos,
   obtenerEnlaceRolExtra,
   obtenerSeccionesNavegacion,
 } from "@/lib/navigation";
@@ -46,7 +45,6 @@ export function NavBar({
   // Misma fuente para escritorio y móvil (lib/navigation.ts) — nunca dos
   // listas mantenidas por separado, para que ambos respeten exactamente
   // el mismo RBAC.
-  const enlacesPlanos = obtenerEnlacesPlanos(rol);
   const secciones = obtenerSeccionesNavegacion(rol);
   const enlaceRolExtra = obtenerEnlaceRolExtra(rol);
 
@@ -71,26 +69,10 @@ export function NavBar({
           </span>
         </Link>
 
-        {/* ============ DESKTOP ============ */}
-        <nav className="hidden md:flex items-center gap-1 overflow-x-auto flex-1 justify-center">
-          {enlacesPlanos.map((link) => {
-            const activo = pathname?.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative text-sm rounded-lg px-3 py-2 whitespace-nowrap transition-colors ${
-                  activo ? "text-white font-medium bg-white/10" : "text-slate-300 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {link.label}
-                {activo && (
-                  <span className="absolute left-3 right-3 -bottom-[9px] h-0.5 rounded-full bg-accent" />
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+        {/* La navegación principal vive en el menú lateral (escritorio, lg+) y
+            en el menú desplegable (tablet/celular). Antes se repetía aquí en una
+            fila con desplazamiento horizontal oculto que no cabía en pantalla. */}
+        <div className="flex-1" />
 
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <button
@@ -132,12 +114,12 @@ export function NavBar({
           </button>
         </div>
 
-        {/* ============ MÓVIL: botón hamburguesa ============ */}
+        {/* ============ TABLET/CELULAR: botón de menú (sin sidebar lateral) ============ */}
         <button
           onClick={() => setAbierto((v) => !v)}
           aria-label={abierto ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={abierto}
-          className="md:hidden h-10 w-10 rounded-xl flex items-center justify-center text-white hover:bg-white/10 transition-colors motion-reduce:transition-none shrink-0"
+          className="lg:hidden h-10 w-10 rounded-xl flex items-center justify-center text-white hover:bg-white/10 transition-colors motion-reduce:transition-none shrink-0"
         >
           <span className="relative w-5 h-5 block">
             <Menu

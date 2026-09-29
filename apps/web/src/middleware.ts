@@ -21,6 +21,7 @@ const RUTAS_PROTEGIDAS = [
   "/jurisprudencia",
   "/videos",
   "/infografias",
+  "/destacados",
   "/referencias-internacionales",
 ];
 // Rutas que requieren, además, rol de administrador — verificado en las
@@ -92,6 +93,7 @@ export const config = {
     "/jurisprudencia/:path*",
     "/videos/:path*",
     "/infografias/:path*",
+    "/destacados/:path*",
     "/referencias-internacionales/:path*",
   ],
 };

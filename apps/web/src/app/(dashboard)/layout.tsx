@@ -1,7 +1,8 @@
 import { NavBar } from "@/components/nav-bar";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { requireAutenticado } from "@/lib/authorization";
-import { obtenerItemsSidebar } from "@/lib/navigation";
+import { obtenerSeccionesSidebar } from "@/lib/navigation";
+import { ChatbotWidget } from "@/modules/chatbot/presentation/chatbot-widget";
 
 // Punto de protección central de TODA el área autenticada de la plataforma
 // (/dashboard, /modulos, /biblioteca, /evaluaciones, /admin, etc).
@@ -12,22 +13,26 @@ import { obtenerItemsSidebar } from "@/lib/navigation";
 // restricción de rol más estricta.
 //
 // El sidebar lateral (solo escritorio) vive aquí, una única vez para los
-// 2 roles con acceso — su contenido cambia según `obtenerItemsSidebar(rol)`,
+// 2 roles con acceso — su contenido cambia según `obtenerSeccionesSidebar(rol)`,
 // la misma fuente que ya usa el navbar superior y el menú móvil. En móvil
 // no se duplica: sigue usando el drawer existente disparado desde NavBar.
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireAutenticado();
-  const itemsSidebar = obtenerItemsSidebar(ctx.rol);
+  const seccionesSidebar = obtenerSeccionesSidebar(ctx.rol);
 
   return (
     <div className="min-h-screen bg-background">
       <NavBar rol={ctx.rol} nombre={ctx.nombre} email={ctx.email} />
       <div className="flex">
-        <AppSidebar items={itemsSidebar} rol={ctx.rol} nombre={ctx.nombre} email={ctx.email} />
-        <main id="contenido-principal" className="flex-1 min-w-0">
+        <AppSidebar secciones={seccionesSidebar} rol={ctx.rol} nombre={ctx.nombre} email={ctx.email} />
+        {/* min-w-0 + overflow-x-clip: ningún contenido ancho (tablas, iframes)
+            puede provocar desplazamiento horizontal de toda la página. */}
+        <main id="contenido-principal" className="flex-1 min-w-0 overflow-x-clip">
           {children}
         </main>
       </div>
+      {/* Chatbot educativo (botón flotante), para el estudiante. */}
+      {ctx.rol === "ESTUDIANTE" && <ChatbotWidget />}
     </div>
   );
 }

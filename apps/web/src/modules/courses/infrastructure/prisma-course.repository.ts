@@ -4,9 +4,9 @@
 import type { PrismaClient } from "@prisma/client";
 import type { ICourseRepository } from "../domain/course-repository.interface";
 import type { Course, Enrollment } from "../domain/course.entity";
-import { CourseRules } from "../domain/course.entity";
 import { otorgarXP } from "@/lib/gamification";
 import { PrismaGamificationRepository } from "@/modules/gamification/infrastructure/prisma-gamification.repository";
+import { sincronizarProgresoModulo } from "@/modules/learning-path/infrastructure/prisma-learning-path.repository";
 
 const XP_POR_LECCION = 5;
 
@@ -14,7 +14,9 @@ export class PrismaCourseRepository implements ICourseRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async listarCursos(): Promise<Course[]> {
+    // Solo módulos activos: los inactivos no forman parte del itinerario del estudiante.
     const cursos = await this.prisma.course.findMany({
+      where: { activo: true },
       orderBy: { orden: "asc" },
       include: { lessons: { orderBy: { orden: "asc" } } },
     });
@@ -62,7 +64,7 @@ export class PrismaCourseRepository implements ICourseRepository {
   async marcarLeccionCompletada(userId: string, lessonId: string) {
     const leccion = await this.prisma.lesson.findUniqueOrThrow({
       where: { id: lessonId },
-      include: { course: { include: { lessons: true } } },
+      select: { courseId: true },
     });
 
     const yaCompletada = await this.prisma.lessonProgress.findUnique({
@@ -79,23 +81,9 @@ export class PrismaCourseRepository implements ICourseRepository {
       await otorgarXP(this.prisma, userId, XP_POR_LECCION);
     }
 
-    const totalLecciones = leccion.course.lessons.length;
-    const completadas = await this.prisma.lessonProgress.count({
-      where: {
-        userId,
-        completado: true,
-        lesson: { courseId: leccion.courseId },
-      },
-    });
-
-    const progreso = CourseRules.calcularProgreso(totalLecciones, completadas);
-    const completado = CourseRules.estaCompletado(progreso);
-
-    await this.prisma.enrollment.upsert({
-      where: { userId_courseId: { userId, courseId: leccion.courseId } },
-      update: { progreso, completado },
-      create: { userId, courseId: leccion.courseId, progreso, completado },
-    });
+    // El módulo cuenta como completado cuando se revisaron todas sus
+    // lecciones Y se aprobó su evaluación (si tiene). Ver learning-path.
+    const { progreso, completado } = await sincronizarProgresoModulo(this.prisma, userId, leccion.courseId);
 
     await new PrismaGamificationRepository(this.prisma).evaluarYOtorgarInsignias(userId);
 

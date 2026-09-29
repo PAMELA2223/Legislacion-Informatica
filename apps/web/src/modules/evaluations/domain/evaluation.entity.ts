@@ -60,6 +60,7 @@ export interface Evaluation {
   courseId?: string | null;
   titulo: string;
   tipo: string;
+  descripcion?: string | null;
   tiempoLimite: number;
   preguntas: Question[];
 }

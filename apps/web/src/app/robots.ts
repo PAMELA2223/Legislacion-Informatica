@@ -23,6 +23,7 @@ const RUTAS_PRIVADAS = [
   "/jurisprudencia",
   "/videos",
   "/infografias",
+  "/destacados",
   "/referencias-internacionales",
   "/api",
 ];

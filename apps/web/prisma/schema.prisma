@@ -26,6 +26,9 @@ model User {
   avatarUrl     String?  @map("avatar_url")
   xp            Int      @default(0)
   nivel         Int      @default(1)
+  // Fecha en que el estudiante completó la autoevaluación final (fin del
+  // proceso de aprendizaje). null = proceso en curso.
+  procesoFinalizadoEn DateTime? @map("proceso_finalizado_en")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -233,6 +236,34 @@ model Infographic {
 }
 
 // ============================================================
+// LO MÁS DESTACADO (reemplaza a las categorías "Videos" e "Infografías")
+// ============================================================
+// Contenido que el administrador elige mostrar en la sección "Lo más
+// destacado": videos, infografías, documentos, enlaces o un módulo concreto.
+// Las tablas video_resources e infographics se conservan intactas; su
+// contenido se puede importar aquí desde /admin/destacados.
+
+model FeaturedContent {
+  id          String   @id @default(uuid())
+  titulo      String
+  descripcion String   @db.Text
+  tipo        String // "VIDEO" | "INFOGRAFIA" | "DOCUMENTO" | "RECURSO" | "ENLACE" | "MODULO"
+  url         String // enlace externo o ruta interna (ej. /modulos/proteccion-datos-personales)
+  imagenUrl   String?  @map("imagen_url")
+  fuente      String?
+  courseId    String?  @map("course_id") // módulo relacionado (opcional)
+  origen      String?  @unique // "video:<id>" | "infografia:<id>" si se importó de las tablas antiguas
+  orden       Int      @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@map("featured_contents")
+}
+
+// ============================================================
 // AMPLIACIÓN — REFERENCIAS Y NORMATIVA INTERNACIONAL
 // ============================================================
 
@@ -378,7 +409,8 @@ model Evaluation {
   id           String   @id @default(uuid())
   courseId     String?  @map("course_id") // módulo educativo al que pertenece (opcional)
   titulo       String
-  tipo         String   @default("modulo") // "modulo" | "diagnostica" | "final" (extensible)
+  tipo         String   @default("modulo") // "modulo" | "diagnostica" (autoevaluación inicial) | "final" (autoevaluación final)
+  descripcion  String?  @db.Text // instrucciones que ve el estudiante antes de empezar
   tiempoLimite Int      @default(0) @map("tiempo_limite") // minutos, 0 = sin límite
   orden        Int      @default(1)
   createdAt    DateTime @default(now()) @map("created_at")
@@ -400,6 +432,7 @@ model Question {
   retroalimentacion  String       @db.Text
   puntaje            Int          @default(1)
   orden              Int
+  activo             Boolean      @default(true) // las preguntas inactivas no se muestran ni se califican
 
   evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
 
@@ -525,12 +558,14 @@ model Course {
   bibliografia String  @db.Text
   propositoAcademico String @db.Text
   orden       Int
+  activo      Boolean  @default(true) // un módulo inactivo no aparece para el estudiante ni cuenta para el progreso
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   lessons     Lesson[]
   enrollments Enrollment[]
   evaluations Evaluation[]
+  destacados  FeaturedContent[]
 
   @@map("courses")
 }

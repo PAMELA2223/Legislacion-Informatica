@@ -1121,11 +1121,183 @@ const LECCIONES_ADICIONALES_POR_SLUG: Record<string, ReturnType<typeof lecciones
   "comercio-electronico": LECCIONES_AMPLIACION_COMERCIO_ELECTRONICO,
 };
 
+// ============================================================
+// AUTOEVALUACIONES INICIAL Y FINAL (flujo de aprendizaje obligatorio)
+// ============================================================
+// Banco de preguntas de partida, basado en la normativa ya cargada en la
+// Biblioteca (Constitución arts. 66 y 92, LOPDP arts. 7 y 16, COIP arts.
+// 229 y 234, Ley de Comercio Electrónico arts. 2 y 14). Se usan las mismas
+// preguntas en ambas para que la comparación inicial → final sea válida,
+// pero cada autoevaluación tiene SUS PROPIAS filas: el administrador puede
+// modificarlas por separado. Solo se cargan si la autoevaluación no tiene
+// preguntas todavía (no se pisan cambios hechos desde el panel).
+
+const PREGUNTAS_AUTOEVALUACION_CONOCIMIENTOS = [
+  {
+    tipo: "VF" as const,
+    enunciado: "En Ecuador, la protección de datos de carácter personal es un derecho reconocido en la Constitución.",
+    opciones: undefined,
+    respuestaCorrecta: { esVerdadero: true },
+    retroalimentacion: "Verdadero. El artículo 66 de la Constitución reconoce y garantiza el derecho a la protección de datos de carácter personal.",
+  },
+  {
+    tipo: "OPCION_MULTIPLE" as const,
+    enunciado: "¿Qué norma regula de forma específica el tratamiento de datos personales en Ecuador?",
+    opciones: {
+      alternativas: [
+        "Código Orgánico Integral Penal (COIP)",
+        "Ley Orgánica de Protección de Datos Personales (LOPDP)",
+        "Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos",
+        "Ley Orgánica de Transparencia y Acceso a la Información Pública",
+      ],
+    },
+    respuestaCorrecta: { indiceCorrecto: 1 },
+    retroalimentacion: "La LOPDP, publicada en el Registro Oficial Suplemento 459 (2021), regula el tratamiento de datos personales.",
+  },
+  {
+    tipo: "VF" as const,
+    enunciado: "Según la LOPDP, el consentimiento para tratar datos personales puede presumirse aunque el titular no haya sido informado.",
+    opciones: undefined,
+    respuestaCorrecta: { esVerdadero: false },
+    retroalimentacion: "Falso. El consentimiento debe ser libre, específico, informado e inequívoco, salvo las excepciones previstas en la ley.",
+  },
+  {
+    tipo: "OPCION_MULTIPLE" as const,
+    enunciado: "¿Cuál de los siguientes NO es un derecho del titular de datos personales según la LOPDP?",
+    opciones: {
+      alternativas: [
+        "Acceder a sus datos",
+        "Rectificar y actualizar sus datos",
+        "Solicitar la eliminación de sus datos",
+        "Exigir la publicación de los datos personales de terceros",
+      ],
+    },
+    respuestaCorrecta: { indiceCorrecto: 3 },
+    retroalimentacion: "La LOPDP reconoce, entre otros, los derechos de acceso, rectificación, actualización, eliminación, oposición y portabilidad; no un derecho a exigir la publicación de datos ajenos.",
+  },
+  {
+    tipo: "OPCION_MULTIPLE" as const,
+    enunciado: "La garantía constitucional que permite a una persona conocer y acceder a los datos que sobre ella constan en archivos públicos o privados es:",
+    opciones: { alternativas: ["Hábeas corpus", "Hábeas data", "Acción de acceso a la información pública", "Acción extraordinaria de protección"] },
+    respuestaCorrecta: { indiceCorrecto: 1 },
+    retroalimentacion: "Es la acción de hábeas data (artículo 92 de la Constitución).",
+  },
+  {
+    tipo: "OPCION_MULTIPLE" as const,
+    enunciado: "¿Qué cuerpo legal ecuatoriano sanciona conductas como el acceso no consentido a un sistema informático?",
+    opciones: {
+      alternativas: [
+        "La Ley Orgánica de Protección de Datos Personales",
+        "El Código Orgánico Integral Penal (COIP)",
+        "La Ley de Propiedad Intelectual",
+        "El Código Civil",
+      ],
+    },
+    respuestaCorrecta: { indiceCorrecto: 1 },
+    retroalimentacion: "El COIP tipifica los delitos informáticos, entre ellos el acceso no consentido a un sistema informático (art. 234).",
+  },
+  {
+    tipo: "OPCION_MULTIPLE" as const,
+    enunciado: "Según la Ley de Comercio Electrónico, Firmas Electrónicas y Mensajes de Datos, la firma electrónica:",
+    opciones: {
+      alternativas: [
+        "No tiene validez legal en Ecuador",
+        "Solo es válida entre instituciones públicas",
+        "Tiene igual validez y efectos jurídicos que una firma manuscrita",
+        "Solo es válida si se imprime el documento",
+      ],
+    },
+    respuestaCorrecta: { indiceCorrecto: 2 },
+    retroalimentacion: "La ley reconoce a la firma electrónica la misma validez y los mismos efectos jurídicos que a una firma manuscrita.",
+  },
+  {
+    tipo: "VF" as const,
+    enunciado: "Los mensajes de datos (por ejemplo, un correo electrónico) tienen igual valor jurídico que los documentos escritos.",
+    opciones: undefined,
+    respuestaCorrecta: { esVerdadero: true },
+    retroalimentacion: "Verdadero. La Ley de Comercio Electrónico reconoce a los mensajes de datos igual valor jurídico que a los documentos escritos.",
+  },
+];
+
+async function seedAutoevaluacionesConocimientos() {
+  const definiciones = [
+    {
+      id: "autoevaluacion-inicial",
+      tipo: "diagnostica",
+      titulo: "Autoevaluación inicial: legislación informática",
+      descripcion:
+        "Antes de comenzar, responde este breve diagnóstico. No afecta tu calificación: sirve para conocer tus conocimientos previos y compararlos al terminar el curso.",
+    },
+    {
+      id: "autoevaluacion-final",
+      tipo: "final",
+      titulo: "Autoevaluación final: legislación informática",
+      descripcion:
+        "Completaste todos los módulos. Responde esta autoevaluación para comprobar lo aprendido y compararlo con tu diagnóstico inicial.",
+    },
+  ];
+
+  for (const def of definiciones) {
+    // Respetar una autoevaluación de ese tipo creada antes desde el panel.
+    const existente = await prisma.evaluation.findFirst({ where: { tipo: def.tipo }, orderBy: { createdAt: "asc" } });
+    const evaluacion =
+      existente ??
+      (await prisma.evaluation.create({
+        data: { id: def.id, tipo: def.tipo, titulo: def.titulo, descripcion: def.descripcion, tiempoLimite: 0, orden: 0 },
+      }));
+
+    const yaTienePreguntas = await prisma.question.count({ where: { evaluationId: evaluacion.id } });
+    if (yaTienePreguntas > 0) continue;
+
+    for (const [i, p] of PREGUNTAS_AUTOEVALUACION_CONOCIMIENTOS.entries()) {
+      await prisma.question.create({
+        data: {
+          id: `${evaluacion.id}-p${i + 1}`,
+          evaluationId: evaluacion.id,
+          tipo: p.tipo,
+          enunciado: p.enunciado,
+          opciones: p.opciones,
+          respuestaCorrecta: p.respuestaCorrecta,
+          retroalimentacion: p.retroalimentacion,
+          puntaje: 1,
+          orden: i + 1,
+        },
+      });
+    }
+  }
+  console.log("Seed completo: autoevaluaciones inicial y final disponibles.");
+}
+
+// ============================================================
+// LO MÁS DESTACADO — copia de los videos e infografías existentes
+// ============================================================
+// Las tablas originales se conservan; aquí solo se copian a
+// featured_contents (una vez: `origen` es único).
+
+async function seedDestacados() {
+  const [videos, infografias] = await Promise.all([prisma.videoResource.findMany(), prisma.infographic.findMany()]);
+  const items = [
+    ...videos.map((v) => ({ origen: `video:${v.id}`, tipo: "VIDEO", r: v })),
+    ...infografias.map((i) => ({ origen: `infografia:${i.id}`, tipo: "INFOGRAFIA", r: i })),
+  ];
+  for (const { origen, tipo, r } of items) {
+    await prisma.featuredContent.upsert({
+      where: { origen },
+      update: {},
+      create: { origen, tipo, titulo: r.titulo, descripcion: r.descripcion, url: r.url, fuente: r.fuente, activo: r.publicado },
+    });
+  }
+  console.log(`Seed completo: ${items.length} recursos disponibles en "Lo más destacado".`);
+}
+
 async function main() {
   for (const modulo of MODULOS) {
+    // `update: {}`: desde que los módulos se administran en la web
+    // (/admin/cursos), volver a ejecutar el seed NO debe pisar los cambios
+    // del administrador (títulos, orden, estado activo, etc.).
     const curso = await prisma.course.upsert({
       where: { slug: modulo.slug },
-      update: { ...modulo, orden: modulo.numero },
+      update: {},
       create: { ...modulo, orden: modulo.numero },
     });
 
@@ -1136,7 +1308,7 @@ async function main() {
     for (const leccion of lecciones) {
       await prisma.lesson.upsert({
         where: { id: `${curso.id}-${leccion.orden}` }, // idempotencia simple para el seed
-        update: leccion,
+        update: {}, // no sobrescribir lecciones editadas desde el panel de administración
         create: { id: `${curso.id}-${leccion.orden}`, courseId: curso.id, ...leccion },
       });
     }
@@ -1155,6 +1327,8 @@ async function main() {
   await seedVideos();
   await seedInfografias();
   await seedReferenciasInternacionales();
+  await seedAutoevaluacionesConocimientos();
+  await seedDestacados();
 }
 
 main()

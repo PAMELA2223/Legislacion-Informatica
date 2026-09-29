@@ -1,11 +1,14 @@
 import type { Rol } from "@prisma/client";
 import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
+import { validarPregunta } from "@/modules/evaluations/domain/question-validation";
+import { TIPO_EVALUACION } from "@/modules/evaluations/domain/evaluation-types";
 import type {
   AdminFaqRow,
   DatosPregunta,
   DatosEvaluacion,
   DatosCasoPractico,
   DatosLeccion,
+  DatosCurso,
   AdminGlossaryRow,
   AdminInfographicRow,
   AdminInternationalReferenceRow,
@@ -163,6 +166,52 @@ export class ObtenerCursoConLeccionesUseCase {
   }
 }
 
+function validarDatosCurso(data: Partial<DatosCurso> | null): DatosCurso {
+  if (!data) throw new Error("Datos del módulo vacíos.");
+  const titulo = data.titulo?.trim();
+  const descripcion = data.descripcion?.trim();
+  if (!titulo) throw new Error("El título del módulo es obligatorio.");
+  if (!descripcion) throw new Error("La descripción del módulo es obligatoria.");
+  return {
+    titulo,
+    descripcion,
+    slug: data.slug?.trim() || undefined,
+    resumen: data.resumen?.trim() ?? "",
+    bibliografia: data.bibliografia?.trim() ?? "",
+    propositoAcademico: data.propositoAcademico?.trim() ?? "",
+    activo: typeof data.activo === "boolean" ? data.activo : undefined,
+  };
+}
+
+export class CrearCursoUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, data: Partial<DatosCurso> | null) {
+    return this.repo.crearCurso(actorId, validarDatosCurso(data));
+  }
+}
+
+export class ActualizarCursoUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string, data: Partial<DatosCurso> | null) {
+    return this.repo.actualizarCurso(actorId, id, validarDatosCurso(data));
+  }
+}
+
+export class EliminarCursoUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string) {
+    return this.repo.eliminarCurso(actorId, id);
+  }
+}
+
+export class MoverCursoUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string, direccion: unknown) {
+    if (direccion !== "arriba" && direccion !== "abajo") throw new Error("Dirección inválida.");
+    return this.repo.moverCurso(actorId, id, direccion);
+  }
+}
+
 // Tipos de lección cuyo contenido vive en una URL (video/imagen/audio/PDF).
 // TEXTO usa el campo "contenido" en su lugar; el resto (LINEA_TIEMPO,
 // MAPA_CONCEPTUAL, PRESENTACION) también admite una URL si se desea.
@@ -225,8 +274,26 @@ export class ListarEvaluacionesAdminUseCase {
 export class CrearEvaluacionUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute(actorId: string, data: DatosEvaluacion) {
-    if (!data.titulo?.trim()) throw new Error("El título es obligatorio.");
-    return this.repo.crearEvaluacion(actorId, data);
+    if (!data?.titulo?.trim()) throw new Error("El título es obligatorio.");
+    const tipos: string[] = Object.values(TIPO_EVALUACION);
+    if (data.tipo && !tipos.includes(data.tipo)) throw new Error("Tipo de evaluación inválido.");
+    const tiempo = Number(data.tiempoLimite ?? 0);
+    if (!Number.isInteger(tiempo) || tiempo < 0) throw new Error("El tiempo límite debe ser 0 o más minutos.");
+    return this.repo.crearEvaluacion(actorId, { ...data, titulo: data.titulo.trim(), tiempoLimite: tiempo });
+  }
+}
+
+export class ActualizarEvaluacionUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string, data: DatosEvaluacion) {
+    if (!data?.titulo?.trim()) throw new Error("El título es obligatorio.");
+    const tiempo = Number(data.tiempoLimite ?? 0);
+    if (!Number.isInteger(tiempo) || tiempo < 0) throw new Error("El tiempo límite debe ser 0 o más minutos.");
+    return this.repo.actualizarEvaluacion(actorId, id, {
+      titulo: data.titulo.trim(),
+      descripcion: data.descripcion,
+      tiempoLimite: tiempo,
+    });
   }
 }
 
@@ -248,12 +315,24 @@ export class EliminarEvaluacionUseCase {
 
 export class CrearPreguntaUseCase {
   constructor(private readonly repo: IAdminRepository) {}
-  async execute(actorId: string, evaluationId: string, data: DatosPregunta) {
-    if (!data.enunciado?.trim()) throw new Error("El enunciado es obligatorio.");
-    if (!data.retroalimentacion?.trim()) throw new Error("La retroalimentación es obligatoria.");
-    if (!data.puntaje || data.puntaje < 1) throw new Error("El puntaje debe ser al menos 1.");
-    if (!data.respuestaCorrecta) throw new Error("La respuesta correcta es obligatoria.");
-    return this.repo.crearPregunta(actorId, evaluationId, data);
+  async execute(actorId: string, evaluationId: string, data: Partial<DatosPregunta> | null) {
+    // Validación estructural completa (opciones, respuesta correcta, etc.)
+    return this.repo.crearPregunta(actorId, evaluationId, validarPregunta(data));
+  }
+}
+
+export class ActualizarPreguntaUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string, data: Partial<DatosPregunta> | null) {
+    return this.repo.actualizarPregunta(actorId, id, validarPregunta(data));
+  }
+}
+
+export class CambiarEstadoPreguntaUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(actorId: string, id: string, activo: unknown) {
+    if (typeof activo !== "boolean") throw new Error("Estado inválido.");
+    return this.repo.cambiarEstadoPregunta(actorId, id, activo);
   }
 }
 

@@ -28,6 +28,7 @@ import {
   PlayCircle,
   ImageIcon,
   Globe2,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { EnlaceNav, SeccionNav } from "@/lib/navigation";
@@ -55,6 +56,7 @@ const ICONOS: Record<string, LucideIcon> = {
   "/videos": PlayCircle,
   "/infografias": ImageIcon,
   "/referencias-internacionales": Globe2,
+  "/destacados": Sparkles,
   "/perfil": User,
   "/admin": ShieldCheck,
 };
@@ -136,7 +138,7 @@ export function MobileNavDrawer({
       <div
         aria-hidden="true"
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm md:hidden transition-opacity duration-300 motion-reduce:transition-none ${
+        className={`fixed inset-0 z-40 bg-foreground/40 backdrop-blur-sm lg:hidden transition-opacity duration-300 motion-reduce:transition-none ${
           abierto ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       />
@@ -146,7 +148,7 @@ export function MobileNavDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Menú de navegación"
-        className={`fixed inset-y-0 right-0 z-50 w-[85%] max-w-sm bg-surface shadow-card-lg md:hidden flex flex-col
+        className={`fixed inset-y-0 right-0 z-50 w-[85%] max-w-sm bg-surface shadow-card-lg lg:hidden flex flex-col
           transition-transform duration-300 ease-out motion-reduce:transition-none
           ${abierto ? "translate-x-0" : "translate-x-full"}`}
       >

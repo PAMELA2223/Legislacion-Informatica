@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Lock, CheckCircle2 } from "lucide-react";
+import { Lock, CheckCircle2, ClipboardCheck } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 
 interface ModuleCardProps {
@@ -10,6 +10,8 @@ interface ModuleCardProps {
   progreso: number;
   completado: boolean;
   desbloqueado: boolean;
+  /** Estado de la evaluación del módulo (opcional para no romper usos anteriores). */
+  evaluacion?: { requerida: boolean; aprobada: boolean; puntaje: number | null };
 }
 
 export function ModuleCard({
@@ -20,10 +22,11 @@ export function ModuleCard({
   progreso,
   completado,
   desbloqueado,
+  evaluacion,
 }: ModuleCardProps) {
   const contenido = (
     <div
-      className={`rounded-2xl border border-border bg-surface backdrop-blur p-6 flex flex-col gap-3 transition-transform ${
+      className={`h-full rounded-2xl border border-border bg-surface backdrop-blur p-6 flex flex-col gap-3 transition-transform ${
         desbloqueado ? "hover:-translate-y-0.5 duration-200 hover:shadow-card-md" : "opacity-60"
       }`}
     >
@@ -40,13 +43,27 @@ export function ModuleCard({
       <h3 className="font-semibold text-foreground">{titulo}</h3>
       <p className="text-sm text-muted-foreground line-clamp-2">{descripcion}</p>
       <ProgressBar value={progreso} />
-      <span className="text-xs text-muted-foreground">{progreso}% completado</span>
+      <span className="text-xs text-muted-foreground">{progreso}% del contenido revisado</span>
+      {evaluacion?.requerida && (
+        <span
+          className={`flex items-center gap-1.5 text-xs font-medium ${
+            evaluacion.aprobada ? "text-success" : "text-muted-foreground"
+          }`}
+        >
+          <ClipboardCheck className="w-3.5 h-3.5" />
+          {evaluacion.aprobada
+            ? `Evaluación aprobada (${evaluacion.puntaje}%)`
+            : evaluacion.puntaje !== null
+              ? `Evaluación pendiente de aprobar (mejor: ${evaluacion.puntaje}%)`
+              : "Evaluación pendiente"}
+        </span>
+      )}
     </div>
   );
 
   if (!desbloqueado) {
-    return <div className="cursor-not-allowed">{contenido}</div>;
+    return <div className="cursor-not-allowed h-full">{contenido}</div>;
   }
 
-  return <Link href={`/modulos/${slug}`}>{contenido}</Link>;
+  return <Link href={`/modulos/${slug}`} className="h-full">{contenido}</Link>;
 }

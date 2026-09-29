@@ -25,7 +25,8 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     ] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({ where: { id: userId } }),
       this.prisma.enrollment.findMany({ where: { userId }, include: { course: true } }),
-      this.prisma.evaluation.count(),
+      // Solo evaluaciones de módulos activos (las autoevaluaciones se muestran aparte).
+      this.prisma.evaluation.count({ where: { tipo: "modulo", course: { activo: true } } }),
       this.prisma.quizAttempt.findMany({
         where: { userId },
         orderBy: { fecha: "desc" },
@@ -53,11 +54,12 @@ export class PrismaDashboardRepository implements IDashboardRepository {
     const modulosCompletados = inscripciones.filter((e) => e.completado).length;
     const modulosEnCurso = inscripciones.filter((e) => !e.completado).length;
 
-    const evaluacionesRealizadasIds = new Set(intentosEvaluacion.map((i) => i.evaluationId));
+    const intentosModulo = intentosEvaluacion.filter((i) => i.evaluation.tipo === "modulo");
+    const evaluacionesRealizadasIds = new Set(intentosModulo.map((i) => i.evaluationId));
     const evaluacionesPendientes = Math.max(0, totalEvaluaciones - evaluacionesRealizadasIds.size);
 
     const mejorPorEvaluacion = new Map<string, number>();
-    for (const intento of intentosEvaluacion) {
+    for (const intento of intentosModulo) {
       const actual = mejorPorEvaluacion.get(intento.evaluationId) ?? 0;
       if (intento.puntaje > actual) mejorPorEvaluacion.set(intento.evaluationId, intento.puntaje);
     }
@@ -108,7 +110,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       progresoGeneral,
       modulosCompletados,
       modulosEnCurso,
-      totalModulos: await this.prisma.course.count(),
+      totalModulos: await this.prisma.course.count({ where: { activo: true } }),
       evaluacionesRealizadas: evaluacionesRealizadasIds.size,
       evaluacionesPendientes,
       promedioCalificaciones,

@@ -1,12 +1,33 @@
-import type { PrismaClient, Prisma, Rol } from "@prisma/client";
+import { Prisma, type PrismaClient, type Rol } from "@prisma/client";
 import { registrarLog } from "@/lib/audit-log";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { TIPO_EVALUACION } from "@/modules/evaluations/domain/evaluation-types";
+
+/** "Protección de Datos" → "proteccion-de-datos" */
+function generarSlug(texto: string): string {
+  return (
+    texto
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "modulo"
+  );
+}
+
+const SELECT_EVAL_MODULO = {
+  where: { tipo: TIPO_EVALUACION.MODULO },
+  orderBy: [{ orden: "asc" as const }, { createdAt: "asc" as const }],
+  take: 1,
+};
 import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
 import type {
   AdminCaseStudyRow,
   DatosCasoPractico,
   AdminCourseRow,
   AdminCourseDetailRow,
+  DatosCurso,
   DatosLeccion,
   AdminEvaluationRow,
   AdminEvaluationDetailRow,
@@ -236,29 +257,58 @@ export class PrismaAdminRepository implements IAdminRepository {
 
   async listarCursos(): Promise<AdminCourseRow[]> {
     const cursos = await this.prisma.course.findMany({
-      orderBy: { orden: "asc" },
-      include: { _count: { select: { lessons: true, enrollments: true } } },
+      orderBy: [{ orden: "asc" }, { numero: "asc" }],
+      include: {
+        _count: { select: { lessons: true, enrollments: true } },
+        evaluations: {
+          ...SELECT_EVAL_MODULO,
+          select: { id: true, _count: { select: { preguntas: { where: { activo: true } } } } },
+        },
+      },
     });
     return cursos.map((c) => ({
       id: c.id,
       titulo: c.titulo,
+      slug: c.slug,
       numero: c.numero,
+      orden: c.orden,
+      activo: c.activo,
       totalLecciones: c._count.lessons,
       totalInscritos: c._count.enrollments,
+      evaluacion: c.evaluations[0]
+        ? { id: c.evaluations[0].id, preguntasActivas: c.evaluations[0]._count.preguntas }
+        : null,
     }));
   }
 
   async obtenerCursoConLecciones(id: string): Promise<AdminCourseDetailRow | null> {
     const curso = await this.prisma.course.findUnique({
       where: { id },
-      include: { lessons: { orderBy: { orden: "asc" } } },
+      include: {
+        lessons: { orderBy: { orden: "asc" } },
+        evaluations: {
+          ...SELECT_EVAL_MODULO,
+          select: {
+            id: true,
+            titulo: true,
+            _count: { select: { preguntas: true, intentos: true } },
+            preguntas: { where: { activo: true }, select: { id: true } },
+          },
+        },
+      },
     });
     if (!curso) return null;
+    const ev = curso.evaluations[0];
     return {
       id: curso.id,
       numero: curso.numero,
+      slug: curso.slug,
       titulo: curso.titulo,
       descripcion: curso.descripcion,
+      resumen: curso.resumen,
+      bibliografia: curso.bibliografia,
+      propositoAcademico: curso.propositoAcademico,
+      activo: curso.activo,
       lecciones: curso.lessons.map((l) => ({
         id: l.id,
         titulo: l.titulo,
@@ -267,7 +317,127 @@ export class PrismaAdminRepository implements IAdminRepository {
         contenido: l.contenido,
         orden: l.orden,
       })),
+      evaluacion: ev
+        ? {
+            id: ev.id,
+            titulo: ev.titulo,
+            totalPreguntas: ev._count.preguntas,
+            preguntasActivas: ev.preguntas.length,
+            totalIntentos: ev._count.intentos,
+          }
+        : null,
     };
+  }
+
+  private async slugDisponible(base: string, excluirId?: string): Promise<string> {
+    let slug = generarSlug(base);
+    for (let i = 2; ; i++) {
+      const existente = await this.prisma.course.findUnique({ where: { slug }, select: { id: true } });
+      if (!existente || existente.id === excluirId) return slug;
+      slug = `${generarSlug(base)}-${i}`;
+    }
+  }
+
+  async crearCurso(actorId: string, data: DatosCurso): Promise<{ id: string }> {
+    const agg = await this.prisma.course.aggregate({ _max: { numero: true, orden: true } });
+    const curso = await this.prisma.course.create({
+      data: {
+        titulo: data.titulo,
+        slug: await this.slugDisponible(data.slug || data.titulo),
+        descripcion: data.descripcion,
+        resumen: data.resumen,
+        bibliografia: data.bibliografia,
+        propositoAcademico: data.propositoAcademico,
+        numero: (agg._max.numero ?? 0) + 1,
+        orden: (agg._max.orden ?? 0) + 1,
+        // Un módulo nuevo no tiene contenido todavía: se crea inactivo y se
+        // activa cuando el administrador le agrega lecciones.
+        activo: false,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "CREAR", "modulo", curso.id);
+    return { id: curso.id };
+  }
+
+  async actualizarCurso(actorId: string, id: string, data: DatosCurso): Promise<void> {
+    if (data.activo) {
+      const lecciones = await this.prisma.lesson.count({ where: { courseId: id } });
+      if (lecciones === 0) {
+        throw new Error("No se puede activar un módulo sin contenido. Agrega al menos una lección primero.");
+      }
+    }
+    await this.prisma.course.update({
+      where: { id },
+      data: {
+        titulo: data.titulo,
+        ...(data.slug ? { slug: await this.slugDisponible(data.slug, id) } : {}),
+        descripcion: data.descripcion,
+        resumen: data.resumen,
+        bibliografia: data.bibliografia,
+        propositoAcademico: data.propositoAcademico,
+        ...(data.activo !== undefined ? { activo: data.activo } : {}),
+      },
+    });
+    await registrarLog(this.prisma, actorId, "EDITAR", "modulo", id);
+  }
+
+  async eliminarCurso(actorId: string, id: string): Promise<void> {
+    const curso = await this.prisma.course.findUnique({
+      where: { id },
+      select: { titulo: true, evaluations: { select: { id: true } } },
+    });
+    if (!curso) throw new Error("Módulo no encontrado.");
+
+    // Protección contra pérdida accidental de información: si hay
+    // estudiantes con progreso o resultados, no se elimina (se sugiere
+    // desactivarlo, que lo oculta sin borrar datos).
+    const idsEval = curso.evaluations.map((e) => e.id);
+    const [inscritos, intentos, progreso] = await Promise.all([
+      this.prisma.enrollment.count({ where: { courseId: id } }),
+      idsEval.length ? this.prisma.quizAttempt.count({ where: { evaluationId: { in: idsEval } } }) : 0,
+      this.prisma.lessonProgress.count({ where: { lesson: { courseId: id } } }),
+    ]);
+    if (inscritos + intentos + progreso > 0) {
+      throw new Error(
+        `No se puede eliminar "${curso.titulo}": tiene ${inscritos} estudiante(s) con progreso y ${intentos} ` +
+          "intento(s) de evaluación registrados. Desactívalo para ocultarlo sin perder esos resultados."
+      );
+    }
+
+    await this.prisma.$transaction([
+      // Las preguntas se eliminan en cascada con cada evaluación.
+      this.prisma.evaluation.deleteMany({ where: { courseId: id } }),
+      // Las lecciones se eliminan en cascada con el módulo; los destacados
+      // que apuntaban a él quedan sin módulo relacionado (SetNull).
+      this.prisma.course.delete({ where: { id } }),
+    ]);
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "modulo", `${id} (${curso.titulo})`);
+  }
+
+  async moverCurso(actorId: string, id: string, direccion: "arriba" | "abajo"): Promise<void> {
+    const cursos = await this.prisma.course.findMany({
+      orderBy: [{ orden: "asc" }, { numero: "asc" }],
+      select: { id: true, numero: true },
+    });
+    const i = cursos.findIndex((c) => c.id === id);
+    const j = direccion === "arriba" ? i - 1 : i + 1;
+    if (i === -1 || j < 0 || j >= cursos.length) return;
+
+    const a = cursos[i];
+    const b = cursos[j];
+    const reordenados = [...cursos];
+    reordenados[i] = b;
+    reordenados[j] = a;
+
+    // `numero` es único y se muestra como "Módulo N": se intercambia junto con
+    // el orden (usando un valor temporal para no violar la restricción única).
+    await this.prisma.$transaction([
+      this.prisma.course.update({ where: { id: a.id }, data: { numero: -a.numero - 1000000 } }),
+      this.prisma.course.update({ where: { id: b.id }, data: { numero: a.numero } }),
+      this.prisma.course.update({ where: { id: a.id }, data: { numero: b.numero } }),
+      ...reordenados.map((c, idx) => this.prisma.course.update({ where: { id: c.id }, data: { orden: idx + 1 } })),
+    ]);
+    await registrarLog(this.prisma, actorId, "EDITAR", "modulo", `${id}: orden ${direccion}`);
   }
 
   async actualizarLeccion(actorId: string, leccionId: string, data: DatosLeccion): Promise<void> {
@@ -299,28 +469,62 @@ export class PrismaAdminRepository implements IAdminRepository {
   }
 
   async eliminarLeccion(actorId: string, leccionId: string): Promise<void> {
+    const leccion = await this.prisma.lesson.findUnique({
+      where: { id: leccionId },
+      select: { courseId: true, course: { select: { activo: true } } },
+    });
+    if (!leccion) throw new Error("Lección no encontrada.");
+    if (leccion.course.activo) {
+      const total = await this.prisma.lesson.count({ where: { courseId: leccion.courseId } });
+      if (total <= 1) {
+        throw new Error("Es la única lección de un módulo activo. Desactiva el módulo antes de eliminarla.");
+      }
+    }
     await this.prisma.lesson.delete({ where: { id: leccionId } });
     await registrarLog(this.prisma, actorId, "ELIMINAR", "leccion", leccionId);
   }
 
   async listarEvaluaciones(): Promise<AdminEvaluationRow[]> {
     const evaluaciones = await this.prisma.evaluation.findMany({
-      include: { _count: { select: { preguntas: true, intentos: true } } },
+      orderBy: [{ tipo: "asc" }, { orden: "asc" }, { createdAt: "asc" }],
+      include: {
+        course: { select: { titulo: true } },
+        _count: { select: { preguntas: true, intentos: true } },
+        preguntas: { where: { activo: true }, select: { id: true } },
+      },
     });
     return evaluaciones.map((e) => ({
       id: e.id,
       titulo: e.titulo,
+      tipo: e.tipo,
+      cursoTitulo: e.course?.titulo ?? null,
       totalPreguntas: e._count.preguntas,
+      preguntasActivas: e.preguntas.length,
       totalIntentos: e._count.intentos,
     }));
   }
 
   async crearEvaluacion(actorId: string, data: DatosEvaluacion): Promise<{ id: string; titulo: string }> {
+    const tipo = data.tipo ?? TIPO_EVALUACION.MODULO;
+
+    // Una sola autoevaluación inicial y una sola final, para que las
+    // preguntas de ambas no se mezclen ni se dupliquen.
+    if (tipo === TIPO_EVALUACION.INICIAL || tipo === TIPO_EVALUACION.FINAL) {
+      const existente = await this.prisma.evaluation.findFirst({ where: { tipo } });
+      if (existente) throw new Error("Esa autoevaluación ya existe; edita sus preguntas en lugar de crear otra.");
+    }
+    // Cada módulo tiene UNA evaluación.
+    if (tipo === TIPO_EVALUACION.MODULO && data.courseId) {
+      const existente = await this.prisma.evaluation.findFirst({ where: { tipo, courseId: data.courseId } });
+      if (existente) throw new Error("Este módulo ya tiene una evaluación.");
+    }
+
     const evaluacion = await this.prisma.evaluation.create({
       data: {
         titulo: data.titulo,
-        courseId: data.courseId ?? null,
-        ...(data.tipo ? { tipo: data.tipo } : {}),
+        courseId: tipo === TIPO_EVALUACION.MODULO ? data.courseId ?? null : null,
+        tipo,
+        descripcion: data.descripcion?.trim() || null,
         ...(data.tiempoLimite !== undefined ? { tiempoLimite: data.tiempoLimite } : {}),
       },
     });
@@ -328,44 +532,102 @@ export class PrismaAdminRepository implements IAdminRepository {
     return { id: evaluacion.id, titulo: evaluacion.titulo };
   }
 
+  async actualizarEvaluacion(actorId: string, id: string, data: DatosEvaluacion): Promise<void> {
+    await this.prisma.evaluation.update({
+      where: { id },
+      data: {
+        titulo: data.titulo,
+        descripcion: data.descripcion?.trim() || null,
+        ...(data.tiempoLimite !== undefined ? { tiempoLimite: data.tiempoLimite } : {}),
+      },
+    });
+    await registrarLog(this.prisma, actorId, "EDITAR", "evaluacion", id);
+  }
+
   async obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetailRow | null> {
     const evaluacion = await this.prisma.evaluation.findUnique({
       where: { id },
-      include: { preguntas: { orderBy: { orden: "asc" } } },
+      include: {
+        preguntas: { orderBy: { orden: "asc" } },
+        course: { select: { titulo: true } },
+        _count: { select: { intentos: true } },
+      },
     });
     if (!evaluacion) return null;
     return {
       id: evaluacion.id,
       titulo: evaluacion.titulo,
+      tipo: evaluacion.tipo,
+      descripcion: evaluacion.descripcion,
       tiempoLimite: evaluacion.tiempoLimite,
+      courseId: evaluacion.courseId,
+      cursoTitulo: evaluacion.course?.titulo ?? null,
+      totalIntentos: evaluacion._count.intentos,
       preguntas: evaluacion.preguntas.map((p) => ({
         id: p.id,
         tipo: p.tipo,
         enunciado: p.enunciado,
+        opciones: p.opciones,
+        respuestaCorrecta: p.respuestaCorrecta,
+        retroalimentacion: p.retroalimentacion,
+        puntaje: p.puntaje,
+        orden: p.orden,
+        activo: p.activo,
       })),
     };
   }
 
   async eliminarEvaluacion(actorId: string, id: string): Promise<void> {
+    // Los intentos se borrarían en cascada: se impide para no perder
+    // resultados de estudiantes (incluida la comparación inicial/final).
+    const intentos = await this.prisma.quizAttempt.count({ where: { evaluationId: id } });
+    if (intentos > 0) {
+      throw new Error(
+        `No se puede eliminar: tiene ${intentos} intento(s) de estudiantes registrados. ` +
+          "Puedes editar o desactivar sus preguntas en su lugar."
+      );
+    }
     await this.prisma.evaluation.delete({ where: { id } });
     await registrarLog(this.prisma, actorId, "ELIMINAR", "evaluacion", id);
   }
 
   async crearPregunta(actorId: string, evaluationId: string, data: DatosPregunta): Promise<void> {
-    const totalActual = await this.prisma.question.count({ where: { evaluationId } });
+    const existe = await this.prisma.evaluation.findUnique({ where: { id: evaluationId }, select: { id: true } });
+    if (!existe) throw new Error("Evaluación no encontrada.");
+    const agg = await this.prisma.question.aggregate({ where: { evaluationId }, _max: { orden: true } });
     const pregunta = await this.prisma.question.create({
       data: {
         evaluationId,
         tipo: data.tipo,
         enunciado: data.enunciado,
-        opciones: data.opciones as Prisma.InputJsonValue,
+        opciones: (data.opciones ?? undefined) as Prisma.InputJsonValue | undefined,
         respuestaCorrecta: data.respuestaCorrecta as Prisma.InputJsonValue,
         retroalimentacion: data.retroalimentacion,
         puntaje: data.puntaje,
-        orden: totalActual + 1,
+        orden: (agg._max.orden ?? 0) + 1,
       },
     });
     await registrarLog(this.prisma, actorId, "CREAR", "pregunta", pregunta.id);
+  }
+
+  async actualizarPregunta(actorId: string, id: string, data: DatosPregunta): Promise<void> {
+    await this.prisma.question.update({
+      where: { id },
+      data: {
+        tipo: data.tipo,
+        enunciado: data.enunciado,
+        opciones: data.opciones === null ? Prisma.DbNull : (data.opciones as Prisma.InputJsonValue),
+        respuestaCorrecta: data.respuestaCorrecta as Prisma.InputJsonValue,
+        retroalimentacion: data.retroalimentacion,
+        puntaje: data.puntaje,
+      },
+    });
+    await registrarLog(this.prisma, actorId, "EDITAR", "pregunta", id);
+  }
+
+  async cambiarEstadoPregunta(actorId: string, id: string, activo: boolean): Promise<void> {
+    await this.prisma.question.update({ where: { id }, data: { activo } });
+    await registrarLog(this.prisma, actorId, "EDITAR", "pregunta", `${id}: ${activo ? "activada" : "desactivada"}`);
   }
 
   async eliminarPregunta(actorId: string, id: string): Promise<void> {

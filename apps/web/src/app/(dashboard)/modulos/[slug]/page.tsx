@@ -1,10 +1,13 @@
 import { notFound, redirect } from "next/navigation";
-import { getAuthenticatedUser } from "@/lib/get-authenticated-user";
+import { requireAutenticado } from "@/lib/authorization";
+import { exigirAutoevaluacionInicial } from "@/lib/learning-path";
 import { prisma } from "@/lib/prisma";
 import { PrismaCourseRepository } from "@/modules/courses/infrastructure/prisma-course.repository";
 import { ObtenerCursoUseCase } from "@/modules/courses/application/course.use-cases";
-import { LessonTabsClient } from "@/modules/courses/presentation/lesson-tabs-client";
-import { ProgressBar } from "@/components/ui/progress-bar";
+import { ModuleLearningView } from "@/modules/courses/presentation/module-learning-view";
+import { TIPO_EVALUACION } from "@/modules/evaluations/domain/evaluation-types";
+
+export const dynamic = "force-dynamic";
 
 export default async function ModuloDetallePage({
   params,
@@ -12,24 +15,33 @@ export default async function ModuloDetallePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const user = await getAuthenticatedUser();
-  if (!user) redirect("/login");
-
-  const repo = new PrismaCourseRepository(prisma);
-  const useCase = new ObtenerCursoUseCase(repo);
+  const ctx = await requireAutenticado(`/modulos/${slug}`);
+  const estado = await exigirAutoevaluacionInicial(ctx); // null = administrador (vista previa)
 
   let curso;
   try {
-    curso = await useCase.execute(slug);
+    curso = await new ObtenerCursoUseCase(new PrismaCourseRepository(prisma)).execute(slug);
   } catch {
     notFound();
   }
 
-  // Progreso de lecciones del usuario actual para este curso
-  const progresoLecciones = await prisma.lessonProgress.findMany({
-    where: { userId: user.id, lesson: { courseId: curso.id } },
-  });
-  const idsCompletadas = new Set(progresoLecciones.map((p) => p.lessonId));
+  const estadoModulo = estado?.modulos.find((m) => m.courseId === curso.id) ?? null;
+  if (estado) {
+    // Estudiante: el módulo debe estar activo y desbloqueado (no basta con conocer la URL).
+    if (!estadoModulo) notFound();
+    if (!estadoModulo.desbloqueado) redirect("/modulos");
+  }
+
+  const idsCompletadas = estado
+    ? new Set(
+        (
+          await prisma.lessonProgress.findMany({
+            where: { userId: ctx.id, completado: true, lesson: { courseId: curso.id } },
+            select: { lessonId: true },
+          })
+        ).map((p) => p.lessonId)
+      )
+    : new Set<string>();
 
   const lecciones = curso.lessons.map((l) => ({
     id: l.id,
@@ -40,37 +52,70 @@ export default async function ModuloDetallePage({
     completado: idsCompletadas.has(l.id),
   }));
 
-  const enrollment = await prisma.enrollment.findUnique({
-    where: { userId_courseId: { userId: user.id, courseId: curso.id } },
-  });
+  // Evaluación: para el estudiante sale del estado del flujo; para el
+  // administrador (vista previa) se consulta la evaluación del módulo.
+  let evaluacion: { existe: boolean; aprobada: boolean; href: string | null; mejorPuntaje: number | null };
+  if (estadoModulo) {
+    evaluacion = {
+      existe: estadoModulo.requiereEvaluacion,
+      aprobada: estadoModulo.evaluacionAprobada,
+      href: estadoModulo.evaluacion ? `/evaluaciones/${estadoModulo.evaluacion.id}` : null,
+      mejorPuntaje: estadoModulo.mejorIntento?.puntaje ?? null,
+    };
+  } else {
+    const ev = await prisma.evaluation.findFirst({
+      where: { courseId: curso.id, tipo: TIPO_EVALUACION.MODULO },
+      orderBy: [{ orden: "asc" }, { createdAt: "asc" }],
+      select: { id: true, _count: { select: { preguntas: { where: { activo: true } } } } },
+    });
+    evaluacion = {
+      existe: Boolean(ev && ev._count.preguntas > 0),
+      aprobada: false,
+      href: ev ? `/evaluaciones/${ev.id}` : null,
+      mejorPuntaje: null,
+    };
+  }
+
+  // Qué sigue al terminar este módulo.
+  let siguientePaso: { href: string; etiqueta: string } | null = null;
+  if (estado && estadoModulo) {
+    const siguiente = estado.modulos[estadoModulo.posicion];
+    if (siguiente) siguientePaso = { href: `/modulos/${siguiente.slug}`, etiqueta: `Siguiente módulo: ${siguiente.titulo}` };
+    else if (estado.final.configurada || estado.final.completada)
+      siguientePaso = {
+        href: "/autoevaluacion/final",
+        etiqueta: estado.final.completada ? "Ver resultados finales" : "Ir a la autoevaluación final",
+      };
+  }
 
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
-      <span className="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2.5 py-1">
-        Módulo {curso.numero}
-      </span>
-      <h1 className="text-2xl font-bold text-foreground mt-3 mb-2">{curso.titulo}</h1>
-      <p className="text-muted-foreground mb-4">{curso.descripcion}</p>
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <ModuleLearningView
+        modulo={{
+          posicion: estadoModulo?.posicion ?? curso.numero,
+          total: estado?.totalModulos ?? null,
+          titulo: curso.titulo,
+          descripcion: curso.descripcion,
+        }}
+        lecciones={lecciones}
+        evaluacion={evaluacion}
+        siguientePaso={siguientePaso}
+        vistaPrevia={!estado}
+      />
 
-      <div className="mb-8">
-        <ProgressBar value={enrollment?.progreso ?? 0} />
-        <span className="text-xs text-muted-foreground">
-          {enrollment?.progreso ?? 0}% completado
-        </span>
-      </div>
-
-      <LessonTabsClient lecciones={lecciones} />
-
-      <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
-        <h2 className="font-semibold text-foreground mb-2">Resumen</h2>
-        <p className="text-sm text-muted-foreground mb-4">{curso.resumen}</p>
-        <h2 className="font-semibold text-foreground mb-2">Propósito académico</h2>
-        <p className="text-sm text-muted-foreground mb-4">{curso.propositoAcademico}</p>
-        <h2 className="font-semibold text-foreground mb-2">Bibliografía</h2>
-        <p className="text-sm text-muted-foreground whitespace-pre-line">
-          {curso.bibliografia}
-        </p>
-      </div>
+      <details className="mt-6 rounded-2xl border border-border bg-surface p-6 group">
+        <summary className="cursor-pointer font-semibold text-foreground">
+          Información del módulo: resumen, propósito y bibliografía
+        </summary>
+        <div className="mt-4">
+          <h2 className="font-semibold text-foreground mb-2">Resumen</h2>
+          <p className="text-sm text-muted-foreground mb-4">{curso.resumen}</p>
+          <h2 className="font-semibold text-foreground mb-2">Propósito académico</h2>
+          <p className="text-sm text-muted-foreground mb-4">{curso.propositoAcademico}</p>
+          <h2 className="font-semibold text-foreground mb-2">Bibliografía</h2>
+          <p className="text-sm text-muted-foreground whitespace-pre-line break-words">{curso.bibliografia}</p>
+        </div>
+      </details>
     </main>
   );
 }

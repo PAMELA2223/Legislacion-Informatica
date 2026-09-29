@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, XCircle, Clock, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { QuestionRenderer } from "./question-renderer";
@@ -21,7 +23,25 @@ interface ResultadoEvaluacion {
   resultadosPorPregunta: ResultadoPregunta[];
 }
 
-export function EvaluationRunner({ evaluacion }: { evaluacion: Evaluation }) {
+interface EnlaceAccion {
+  href: string;
+  label: string;
+}
+
+export function EvaluationRunner({
+  evaluacion,
+  modo = "modulo",
+  mostrarRetroalimentacion = true,
+  enlaceTrasEnviar,
+}: {
+  evaluacion: Evaluation;
+  /** "autoevaluacion" muestra un resultado neutral (diagnóstico), sin "aprobado/reprobado". */
+  modo?: "modulo" | "autoevaluacion";
+  mostrarRetroalimentacion?: boolean;
+  /** Enlace que se muestra después de enviar (ej. "Volver al módulo", "Ir a los módulos"). */
+  enlaceTrasEnviar?: EnlaceAccion;
+}) {
+  const router = useRouter();
   const [indice, setIndice] = useState(0);
   const [respuestas, setRespuestas] = useState<Record<string, unknown>>({});
   const [enviando, setEnviando] = useState(false);
@@ -36,7 +56,7 @@ export function EvaluationRunner({ evaluacion }: { evaluacion: Evaluation }) {
   useEffect(() => {
     if (segundosRestantes === null || resultado) return;
     if (segundosRestantes <= 0) {
-      handleEnviar();
+      handleEnviar(true);
       return;
     }
     const t = setTimeout(() => setSegundosRestantes((s) => (s !== null ? s - 1 : s)), 1000);
@@ -44,7 +64,14 @@ export function EvaluationRunner({ evaluacion }: { evaluacion: Evaluation }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segundosRestantes, resultado]);
 
-  async function handleEnviar() {
+  async function handleEnviar(porTiempo = false) {
+    const sinResponder = evaluacion.preguntas.filter((p) => respuestas[p.id] === undefined || respuestas[p.id] === "").length;
+    if (!porTiempo && sinResponder > 0) {
+      const ok = confirm(
+        `Tienes ${sinResponder} pregunta(s) sin responder; se calificarán como incorrectas. ¿Enviar de todos modos?`
+      );
+      if (!ok) return;
+    }
     setEnviando(true);
     try {
       const payload = {
@@ -59,8 +86,17 @@ export function EvaluationRunner({ evaluacion }: { evaluacion: Evaluation }) {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al enviar la evaluación.");
+      if (!res.ok) {
+        if (data.redirigirA) {
+          alert(data.error);
+          router.push(data.redirigirA);
+          return;
+        }
+        throw new Error(data.error || "Error al enviar la evaluación.");
+      }
       setResultado(data);
+      // Refresca los datos del servidor (progreso, módulos desbloqueados, etc.)
+      router.refresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al enviar la evaluación.");
     } finally {
@@ -68,43 +104,83 @@ export function EvaluationRunner({ evaluacion }: { evaluacion: Evaluation }) {
     }
   }
 
+  function reintentar() {
+    setResultado(null);
+    setRespuestas({});
+    setIndice(0);
+    setSegundosRestantes(evaluacion.tiempoLimite > 0 ? evaluacion.tiempoLimite * 60 : null);
+  }
+
   if (resultado) {
+    const esAutoevaluacion = modo === "autoevaluacion";
     return (
       <div className="flex flex-col gap-4">
-        <div
-          className={`rounded-2xl border p-6 text-center ${
-            resultado.aprobado
-              ? "border-success/40 bg-success/10"
-              : "border-red-300 bg-red-50"
-          }`}
-        >
-          <p className="text-3xl font-bold text-foreground">{resultado.puntaje}%</p>
-          <p className={`text-sm font-medium ${resultado.aprobado ? "text-success" : "text-red-600"}`}>
-            {resultado.aprobado ? "¡Evaluación aprobada!" : "No alcanzaste el puntaje mínimo (70%)"}
-          </p>
+        {esAutoevaluacion ? (
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center">
+            <ClipboardCheck className="w-8 h-8 text-primary mx-auto mb-2" />
+            <p className="text-3xl font-bold text-foreground">{resultado.puntaje}%</p>
+            <p className="text-sm font-medium text-foreground">Autoevaluación registrada</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Este resultado es diagnóstico: sirve para comparar tu punto de partida con lo aprendido.
+            </p>
+          </div>
+        ) : (
+          <div
+            className={`rounded-2xl border p-6 text-center ${
+              resultado.aprobado
+                ? "border-success/40 bg-success/10"
+                : "border-red-300 bg-red-50"
+            }`}
+          >
+            <p className="text-3xl font-bold text-foreground">{resultado.puntaje}%</p>
+            <p className={`text-sm font-medium ${resultado.aprobado ? "text-success" : "text-red-600"}`}>
+              {resultado.aprobado ? "¡Evaluación aprobada!" : "No alcanzaste el puntaje mínimo (70%)"}
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-3">
+          {enlaceTrasEnviar && (
+            <Link href={enlaceTrasEnviar.href}>
+              <Button>{enlaceTrasEnviar.label}</Button>
+            </Link>
+          )}
+          {!esAutoevaluacion && !resultado.aprobado && (
+            <Button variant="outline" onClick={reintentar}>
+              Intentar de nuevo
+            </Button>
+          )}
         </div>
 
-        <h3 className="font-semibold text-foreground mt-2">Retroalimentación por pregunta</h3>
-        {evaluacion.preguntas.map((p) => {
-          const r = resultado.resultadosPorPregunta.find((x) => x.questionId === p.id);
-          return (
-            <div key={p.id} className="rounded-xl border border-border bg-surface p-4">
-              <div className="flex items-start gap-2">
-                {r?.correcta ? (
-                  <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-0.5" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <p className="text-sm font-medium text-foreground">{p.enunciado}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{r?.retroalimentacion}</p>
+        {mostrarRetroalimentacion && resultado.resultadosPorPregunta.length > 0 && (
+          <>
+            <h3 className="font-semibold text-foreground mt-2">Retroalimentación por pregunta</h3>
+            {evaluacion.preguntas.map((p) => {
+              const r = resultado.resultadosPorPregunta.find((x) => x.questionId === p.id);
+              return (
+                <div key={p.id} className="rounded-xl border border-border bg-surface p-4">
+                  <div className="flex items-start gap-2">
+                    {r?.correcta ? (
+                      <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{p.enunciado}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{r?.retroalimentacion}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </>
+        )}
       </div>
     );
+  }
+
+  if (evaluacion.preguntas.length === 0) {
+    return <p className="text-sm text-muted-foreground">Esta evaluación todavía no tiene preguntas disponibles.</p>;
   }
 
   return (
@@ -140,8 +216,8 @@ export function EvaluationRunner({ evaluacion }: { evaluacion: Evaluation }) {
           Anterior
         </Button>
         {esUltima ? (
-          <Button onClick={handleEnviar} isLoading={enviando}>
-            Enviar evaluación
+          <Button onClick={() => handleEnviar()} isLoading={enviando}>
+            {modo === "autoevaluacion" ? "Enviar autoevaluación" : "Enviar evaluación"}
           </Button>
         ) : (
           <Button onClick={() => setIndice((i) => i + 1)}>Siguiente</Button>

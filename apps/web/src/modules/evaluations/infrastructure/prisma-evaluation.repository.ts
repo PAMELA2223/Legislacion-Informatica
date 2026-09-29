@@ -14,6 +14,11 @@ import type {
 } from "../domain/evaluation.entity";
 import { otorgarXP } from "@/lib/gamification";
 import { PrismaGamificationRepository } from "@/modules/gamification/infrastructure/prisma-gamification.repository";
+import {
+  registrarFinalizacionSiCorresponde,
+  sincronizarProgresoModulo,
+} from "@/modules/learning-path/infrastructure/prisma-learning-path.repository";
+import { TIPO_EVALUACION, esAutoevaluacion } from "../domain/evaluation-types";
 
 const XP_POR_EVALUACION_APROBADA = 15;
 
@@ -25,6 +30,7 @@ export class PrismaEvaluationRepository implements IEvaluationRepository {
       where: courseId ? { courseId } : undefined,
       include: {
         preguntas: {
+          where: { activo: true },
           orderBy: { orden: "asc" },
           select: {
             id: true,
@@ -49,6 +55,7 @@ export class PrismaEvaluationRepository implements IEvaluationRepository {
       where: { id },
       include: {
         preguntas: {
+          where: { activo: true },
           orderBy: { orden: "asc" },
           select: {
             id: true,
@@ -69,7 +76,7 @@ export class PrismaEvaluationRepository implements IEvaluationRepository {
 
   async obtenerPreguntasConRespuesta(evaluationId: string): Promise<QuestionConRespuesta[]> {
     const preguntas = await this.prisma.question.findMany({
-      where: { evaluationId },
+      where: { evaluationId, activo: true },
       orderBy: { orden: "asc" },
     });
     return preguntas as unknown as QuestionConRespuesta[];
@@ -81,6 +88,11 @@ export class PrismaEvaluationRepository implements IEvaluationRepository {
     resultado: ResultadoEvaluacion,
     respuestas: RespuestaEstudiante[]
   ): Promise<void> {
+    const evaluacion = await this.prisma.evaluation.findUniqueOrThrow({
+      where: { id: evaluationId },
+      select: { tipo: true, courseId: true },
+    });
+
     await this.prisma.quizAttempt.create({
       data: {
         userId,
@@ -91,9 +103,19 @@ export class PrismaEvaluationRepository implements IEvaluationRepository {
       },
     });
 
-    if (resultado.aprobado) {
+    // Las autoevaluaciones son diagnósticas: no otorgan XP por "aprobar".
+    if (resultado.aprobado && !esAutoevaluacion(evaluacion.tipo)) {
       await otorgarXP(this.prisma, userId, XP_POR_EVALUACION_APROBADA);
     }
+
+    // Mantener coherente el progreso del flujo de aprendizaje.
+    if (evaluacion.tipo === TIPO_EVALUACION.MODULO && evaluacion.courseId) {
+      await sincronizarProgresoModulo(this.prisma, userId, evaluacion.courseId);
+    }
+    if (evaluacion.tipo === TIPO_EVALUACION.FINAL) {
+      await registrarFinalizacionSiCorresponde(this.prisma, userId);
+    }
+
     await new PrismaGamificationRepository(this.prisma).evaluarYOtorgarInsignias(userId);
   }
 

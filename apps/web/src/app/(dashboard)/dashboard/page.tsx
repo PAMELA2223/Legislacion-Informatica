@@ -15,6 +15,8 @@ import { StatCard } from "@/modules/dashboard/presentation/stat-card";
 import { RecentActivityList } from "@/modules/dashboard/presentation/recent-activity-list";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { RadarProfileChart } from "@/modules/self-assessment/presentation/radar-profile-chart";
+import { exigirAutoevaluacionInicial } from "@/lib/learning-path";
+import { LearningPathSteps } from "@/modules/learning-path/presentation/learning-path-steps";
 
 export default async function DashboardPage() {
   // requireAutenticado ya exige un rol con acceso a la plataforma (bloquea
@@ -23,6 +25,10 @@ export default async function DashboardPage() {
   // del ESTUDIANTE. Administrador se redirige a la suya.
   const ctx = await requireAutenticado();
   if (ctx.rol !== "ESTUDIANTE") redirect(rutaHomeDeRol(ctx.rol));
+
+  // Flujo de aprendizaje: tras el login (que aterriza aquí), un estudiante
+  // que no rindió la autoevaluación inicial obligatoria es redirigido a ella.
+  const estado = await exigirAutoevaluacionInicial(ctx);
 
   const repo = new PrismaDashboardRepository(prisma);
   const resumen = await new ObtenerDashboardEstudianteUseCase(repo).execute(ctx.id);
@@ -34,6 +40,12 @@ export default async function DashboardPage() {
         {nombre ? `Hola, ${nombre}` : "Hola de nuevo"}
       </h1>
       <p className="text-sm text-muted-foreground mb-8">Este es tu resumen de progreso.</p>
+
+      {estado && (
+        <div className="mb-8">
+          <LearningPathSteps estado={estado} />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard

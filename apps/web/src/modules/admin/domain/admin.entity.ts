@@ -114,9 +114,24 @@ export interface AdminLibraryRow {
 export interface AdminCourseRow {
   id: string;
   titulo: string;
+  slug: string;
   numero: number;
+  orden: number;
+  activo: boolean;
   totalLecciones: number;
   totalInscritos: number;
+  /** Evaluación del módulo (null = el módulo todavía no tiene evaluación). */
+  evaluacion: { id: string; preguntasActivas: number } | null;
+}
+
+export interface DatosCurso {
+  titulo: string;
+  slug?: string;
+  descripcion: string;
+  resumen: string;
+  bibliografia: string;
+  propositoAcademico: string;
+  activo?: boolean;
 }
 
 export interface AdminLessonRow {
@@ -131,9 +146,21 @@ export interface AdminLessonRow {
 export interface AdminCourseDetailRow {
   id: string;
   numero: number;
+  slug: string;
   titulo: string;
   descripcion: string;
+  resumen: string;
+  bibliografia: string;
+  propositoAcademico: string;
+  activo: boolean;
   lecciones: AdminLessonRow[];
+  evaluacion: {
+    id: string;
+    titulo: string;
+    totalPreguntas: number;
+    preguntasActivas: number;
+    totalIntentos: number;
+  } | null;
 }
 
 export type TipoLeccion =
@@ -156,19 +183,35 @@ export interface DatosLeccion {
 export interface AdminEvaluationRow {
   id: string;
   titulo: string;
+  tipo: string;
+  cursoTitulo: string | null;
   totalPreguntas: number;
+  preguntasActivas: number;
   totalIntentos: number;
+}
+
+export interface AdminQuestionRow {
+  id: string;
+  tipo: DatosPregunta["tipo"];
+  enunciado: string;
+  opciones: unknown;
+  respuestaCorrecta: unknown;
+  retroalimentacion: string;
+  puntaje: number;
+  orden: number;
+  activo: boolean;
 }
 
 export interface AdminEvaluationDetailRow {
   id: string;
   titulo: string;
+  tipo: string;
+  descripcion: string | null;
   tiempoLimite: number;
-  preguntas: {
-    id: string;
-    tipo: string;
-    enunciado: string;
-  }[];
+  courseId: string | null;
+  cursoTitulo: string | null;
+  totalIntentos: number;
+  preguntas: AdminQuestionRow[];
 }
 
 export interface DatosPregunta {
@@ -184,6 +227,7 @@ export interface DatosEvaluacion {
   titulo: string;
   courseId?: string | null;
   tipo?: string;
+  descripcion?: string | null;
   tiempoLimite?: number;
 }
 

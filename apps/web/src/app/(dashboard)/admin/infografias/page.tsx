@@ -17,6 +17,11 @@ export default async function AdminInfografiasPage() {
 
   return (
     <div>
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-6 text-sm text-foreground">
+        Esta sección ya no aparece en el menú de los estudiantes: fue reemplazada por{" "}
+        <Link href="/admin/destacados" className="text-primary font-medium hover:underline">Lo más destacado</Link>. Los
+        registros se conservan y pueden importarse allí.
+      </div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-foreground">Infografías</h1>
         <Link href="/admin/infografias/nueva">

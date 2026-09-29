@@ -4,6 +4,7 @@ import type {
   DatosCasoPractico,
   AdminCourseRow,
   AdminCourseDetailRow,
+  DatosCurso,
   DatosLeccion,
   AdminEvaluationRow,
   AdminEvaluationDetailRow,
@@ -70,17 +71,24 @@ export interface IAdminRepository {
   actualizarDocumentoBiblioteca(actorId: string, id: string, data: DatosDocumentoBiblioteca): Promise<void>;
   eliminarDocumentoBiblioteca(actorId: string, id: string): Promise<void>;
 
-  // Cursos, evaluaciones y casos (solo lectura + eliminación)
+  // Módulos (CRUD completo + orden + activación), evaluaciones y casos
   listarCursos(): Promise<AdminCourseRow[]>;
   obtenerCursoConLecciones(id: string): Promise<AdminCourseDetailRow | null>;
+  crearCurso(actorId: string, data: DatosCurso): Promise<{ id: string }>;
+  actualizarCurso(actorId: string, id: string, data: DatosCurso): Promise<void>;
+  eliminarCurso(actorId: string, id: string): Promise<void>;
+  moverCurso(actorId: string, id: string, direccion: "arriba" | "abajo"): Promise<void>;
   actualizarLeccion(actorId: string, leccionId: string, data: DatosLeccion): Promise<void>;
   crearLeccion(actorId: string, courseId: string, data: DatosLeccion): Promise<void>;
   eliminarLeccion(actorId: string, leccionId: string): Promise<void>;
   listarEvaluaciones(): Promise<AdminEvaluationRow[]>;
   crearEvaluacion(actorId: string, data: DatosEvaluacion): Promise<{ id: string; titulo: string }>;
   obtenerEvaluacionConPreguntas(id: string): Promise<AdminEvaluationDetailRow | null>;
+  actualizarEvaluacion(actorId: string, id: string, data: DatosEvaluacion): Promise<void>;
   eliminarEvaluacion(actorId: string, id: string): Promise<void>;
   crearPregunta(actorId: string, evaluationId: string, data: DatosPregunta): Promise<void>;
+  actualizarPregunta(actorId: string, id: string, data: DatosPregunta): Promise<void>;
+  cambiarEstadoPregunta(actorId: string, id: string, activo: boolean): Promise<void>;
   eliminarPregunta(actorId: string, id: string): Promise<void>;
   listarCasos(): Promise<AdminCaseStudyRow[]>;
   crearCaso(actorId: string, data: DatosCasoPractico): Promise<void>;

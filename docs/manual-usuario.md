@@ -100,3 +100,14 @@ La autenticación se gestiona con Supabase Auth y toda la comunicación
 viaja cifrada por HTTPS. Solo un Administrador puede ver o modificar el
 rol de otros usuarios; ningún dato de contraseña se almacena en texto
 plano (lo gestiona Supabase Auth).
+
+## Actualización: flujo de aprendizaje obligatorio
+
+Desde esta versión, el estudiante sigue este recorrido: **autoevaluación inicial
+obligatoria → módulos (contenido + evaluación de cada módulo) → autoevaluación
+final obligatoria**. Las categorías "Evaluaciones", "Videos" e "Infografías" ya
+no aparecen en el menú; en su lugar está **"Lo más destacado"**, y cada módulo
+incluye su propia evaluación. Un asistente (chatbot) está disponible en el botón
+flotante de la esquina inferior derecha. El administrador gestiona módulos,
+evaluaciones, autoevaluaciones y destacados desde el panel. Detalle técnico en
+`docs/flujo-aprendizaje-y-administracion.md`.

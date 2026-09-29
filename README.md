@@ -4,6 +4,12 @@ Plataforma educativa web sobre legislación informática del Ecuador:
 módulos formativos, biblioteca jurídica, evaluaciones, casos prácticos,
 autoevaluación de competencias y gamificación.
 
+> **Novedad:** flujo de aprendizaje obligatorio (autoevaluación inicial → módulos
+> con su evaluación → autoevaluación final), gestión de módulos y evaluaciones
+> desde el panel, "Lo más destacado" y chatbot educativo. Ver
+> [`docs/flujo-aprendizaje-y-administracion.md`](./docs/flujo-aprendizaje-y-administracion.md)
+> — incluye los pasos para **actualizar una instalación existente**.
+>
 > Documentación extendida en [`/docs`](./docs):
 > - [`docs/manual-tecnico.md`](./docs/manual-tecnico.md) — arquitectura, stack, despliegue.
 > - [`docs/manual-usuario.md`](./docs/manual-usuario.md) — guía funcional por rol.
@@ -21,6 +27,7 @@ autoevaluación de competencias y gamificación.
 | Pruebas | Vitest |
 | CI | GitHub Actions |
 | Despliegue | Vercel |
+| Chatbot (opcional) | API de Anthropic (Claude), vía `ANTHROPIC_API_KEY` |
 
 ## Estructura del repositorio
 

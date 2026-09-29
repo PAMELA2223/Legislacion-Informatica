@@ -32,8 +32,16 @@ export class EnviarIntentoUseCase {
     const preguntas = await this.repo.obtenerPreguntasConRespuesta(evaluationId);
     if (preguntas.length === 0) throw new Error("La evaluación no tiene preguntas.");
 
-    const resultado = EvaluationRules.calificarEvaluacion(preguntas, respuestas);
-    await this.repo.guardarIntento(userId, evaluationId, resultado, respuestas);
+    // Solo se guardan respuestas de preguntas que pertenecen a ESTA evaluación
+    // (evita registrar respuestas sin pregunta asociada o manipuladas).
+    const idsValidos = new Set(preguntas.map((p) => p.id));
+    const respuestasValidas = (Array.isArray(respuestas) ? respuestas : []).filter(
+      (r): r is RespuestaEstudiante =>
+        Boolean(r) && typeof r.questionId === "string" && idsValidos.has(r.questionId)
+    );
+
+    const resultado = EvaluationRules.calificarEvaluacion(preguntas, respuestasValidas);
+    await this.repo.guardarIntento(userId, evaluationId, resultado, respuestasValidas);
     return resultado;
   }
 }

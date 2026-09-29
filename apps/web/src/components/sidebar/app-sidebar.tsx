@@ -33,11 +33,12 @@ import {
   PlayCircle,
   ImageIcon,
   Globe2,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { Rol } from "@prisma/client";
 import { createSupabaseBrowserClient } from "@/lib/supabase-client";
-import type { EnlaceNav } from "@/lib/navigation";
+import type { SeccionNav } from "@/lib/navigation";
 
 // Un solo lugar donde se resuelve el nombre de ícono (string, dato plano
 // que sí puede viajar de un Server Component a este Client Component) a un
@@ -69,6 +70,7 @@ const ICONOS: Record<string, LucideIcon> = {
   PlayCircle,
   ImageIcon,
   Globe2,
+  Sparkles,
 };
 
 function resolverIcono(nombre: string): LucideIcon {
@@ -82,12 +84,12 @@ const ETIQUETAS_ROL: Record<string, string> = {
 };
 
 export function AppSidebar({
-  items,
+  secciones,
   rol,
   nombre,
   email,
 }: {
-  items: EnlaceNav[];
+  secciones: SeccionNav[];
   rol: Rol;
   nombre: string;
   email: string;
@@ -129,33 +131,44 @@ export function AppSidebar({
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2.5 flex flex-col gap-1">
-        {items.map((item) => {
-          const activo =
-            item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href);
-          const Icono = resolverIcono(item.icon);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={colapsado ? item.label : undefined}
-              aria-current={activo ? "page" : undefined}
-              className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors motion-reduce:transition-none ${
-                colapsado ? "justify-center" : ""
-              } ${
-                activo
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-foreground hover:bg-background-secondary"
-              }`}
-            >
-              {activo && !colapsado && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-primary" />
-              )}
-              <Icono className="w-[18px] h-[18px] shrink-0" />
-              {!colapsado && <span className="truncate">{item.label}</span>}
-            </Link>
-          );
-        })}
+      <nav aria-label="Menú principal" className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2.5 flex flex-col gap-4">
+        {secciones.map((seccion) => (
+          <div key={seccion.titulo} className="flex flex-col gap-1">
+            {colapsado ? (
+              <hr className="mx-2 mb-1 border-border first:hidden" aria-hidden />
+            ) : (
+              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {seccion.titulo}
+              </p>
+            )}
+            {seccion.enlaces.map((item) => {
+              const activo =
+                item.href === "/dashboard" ? pathname === "/dashboard" : pathname?.startsWith(item.href);
+              const Icono = resolverIcono(item.icon);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={colapsado ? item.label : undefined}
+                  aria-current={activo ? "page" : undefined}
+                  className={`relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors motion-reduce:transition-none ${
+                    colapsado ? "justify-center" : ""
+                  } ${
+                    activo
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-foreground hover:bg-background-secondary"
+                  }`}
+                >
+                  {activo && !colapsado && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-primary" />
+                  )}
+                  <Icono className="w-[18px] h-[18px] shrink-0" />
+                  {!colapsado && <span className="truncate">{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Usuario + cerrar sesión */}
