@@ -32,10 +32,11 @@ const SECCIONES: SeccionNav[] = [
   {
     titulo: "Académico",
     enlaces: [
+      // Mismo orden que el flujo: Inicio → Autoevaluación → Módulos.
+      { href: "/autoevaluacion", label: "Autoevaluación", roles: ["ESTUDIANTE"], icon: "ClipboardList" },
       { href: "/modulos", label: "Módulos", roles: ["ESTUDIANTE"], icon: "BookOpen" },
       { href: "/biblioteca", label: "Biblioteca", roles: ["ESTUDIANTE"], icon: "Library" },
       { href: "/casos-practicos", label: "Casos prácticos", roles: ["ESTUDIANTE"], icon: "Scale" },
-      { href: "/autoevaluacion", label: "Autoevaluación", roles: ["ESTUDIANTE"], icon: "ClipboardList" },
       // "Lo más destacado" reemplaza a las antiguas categorías "Videos" e
       // "Infografías". "Evaluaciones" ya no es una categoría: vive en cada módulo.
       { href: "/destacados", label: "Lo más destacado", roles: ["ESTUDIANTE"], icon: "Sparkles" },

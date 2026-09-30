@@ -28,7 +28,7 @@ export default async function AutoevaluacionInicialPage() {
           <ClipboardCheck className="w-8 h-8 text-primary mx-auto mb-2" />
           <p className="text-3xl font-bold text-foreground">{estado.inicial.puntaje}%</p>
           <p className="text-sm text-muted-foreground">
-            Resultado registrado el{" "}
+            Intento 1 de 1 · registrado el{" "}
             {estado.inicial.fecha && new Date(estado.inicial.fecha).toLocaleDateString("es-EC")}
           </p>
         </div>
@@ -70,7 +70,7 @@ export default async function AutoevaluacionInicialPage() {
           "Antes de comenzar, responde este breve diagnóstico sobre legislación informática. No afecta tu calificación: sirve para conocer tus conocimientos previos y compararlos al final del curso."}
       </p>
       <p className="text-xs text-muted-foreground mb-8">
-        Solo se responde una vez. Al terminar se habilitarán los módulos de aprendizaje.
+        Tienes <strong>1 intento</strong>: se responde una sola vez. Al terminar se habilitarán los módulos de aprendizaje.
       </p>
 
       <div className="rounded-2xl border border-border bg-surface p-6">

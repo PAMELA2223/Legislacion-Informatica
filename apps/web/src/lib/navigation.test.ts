@@ -17,6 +17,11 @@ describe("navegación", () => {
     expect(hrefs.sort()).toEqual(ITEMS_SIDEBAR_ADMIN.map((i) => i.href).sort());
   });
 
+  it("el menú del estudiante sigue el flujo: Inicio → Autoevaluación → Módulos", () => {
+    const hrefs = obtenerEnlacesPlanos("ESTUDIANTE").map((e) => e.href);
+    expect(hrefs.slice(0, 3)).toEqual(["/dashboard", "/autoevaluacion", "/modulos"]);
+  });
+
   it("el sidebar del estudiante incluye su perfil", () => {
     const hrefs = obtenerSeccionesSidebar("ESTUDIANTE").flatMap((s) => s.enlaces.map((e) => e.href));
     expect(hrefs).toContain("/perfil");

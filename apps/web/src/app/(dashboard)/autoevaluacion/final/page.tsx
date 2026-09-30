@@ -31,6 +31,10 @@ export default async function AutoevaluacionFinalPage() {
           <p className="text-sm text-muted-foreground mt-1">
             Terminaste los {estado.totalModulos} módulos, sus evaluaciones y la autoevaluación final.
           </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Intento 1 de 1 · {estado.final.puntaje}% ·{" "}
+            {estado.final.fecha && new Date(estado.final.fecha).toLocaleDateString("es-EC", { day: "2-digit", month: "long", year: "numeric" })}
+          </p>
         </div>
         <div className="rounded-2xl border border-border bg-surface p-6">
           <h2 className="font-semibold text-foreground mb-4">Resultado inicial → Resultado final</h2>
@@ -91,7 +95,9 @@ export default async function AutoevaluacionFinalPage() {
         {evaluacion.descripcion ||
           "Completaste todos los módulos. Responde esta autoevaluación final para comprobar lo aprendido y compararlo con tu diagnóstico inicial."}
       </p>
-      <p className="text-xs text-muted-foreground mb-8">Solo se responde una vez.</p>
+      <p className="text-xs text-muted-foreground mb-8">
+        Tienes <strong>1 intento</strong>: la autoevaluación final se responde una sola vez y su resultado se compara con el inicial.
+      </p>
 
       <div className="rounded-2xl border border-border bg-surface p-6">
         <EvaluationRunner

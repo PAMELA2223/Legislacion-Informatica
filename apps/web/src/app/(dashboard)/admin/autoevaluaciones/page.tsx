@@ -29,19 +29,42 @@ export default async function AdminAutoevaluacionesPage() {
     include: {
       _count: { select: { preguntas: true } },
       preguntas: { where: { activo: true }, select: { id: true } },
-      intentos: { orderBy: { fecha: "asc" }, select: { userId: true, puntaje: true } },
+      intentos: {
+        orderBy: { fecha: "asc" },
+        select: { userId: true, puntaje: true, fecha: true, user: { select: { nombre: true, email: true } } },
+      },
     },
   });
 
   // Primer intento por estudiante (la autoevaluación se responde una sola vez).
-  const primerIntento = (tipo: string) => {
+  type Intento = { puntaje: number; fecha: Date; nombre: string; email: string };
+  const primerIntentoDetalle = (tipo: string) => {
     const ev = evaluaciones.find((e) => e.tipo === tipo);
-    const mapa = new Map<string, number>();
-    for (const i of ev?.intentos ?? []) if (!mapa.has(i.userId)) mapa.set(i.userId, i.puntaje);
+    const mapa = new Map<string, Intento>();
+    for (const i of ev?.intentos ?? [])
+      if (!mapa.has(i.userId)) mapa.set(i.userId, { puntaje: i.puntaje, fecha: i.fecha, nombre: i.user.nombre, email: i.user.email });
     return mapa;
   };
-  const inicial = primerIntento(TIPO_EVALUACION.INICIAL);
-  const final = primerIntento(TIPO_EVALUACION.FINAL);
+  const detalleInicial = primerIntentoDetalle(TIPO_EVALUACION.INICIAL);
+  const detalleFinal = primerIntentoDetalle(TIPO_EVALUACION.FINAL);
+  const soloPuntaje = (m: Map<string, Intento>) => new Map(Array.from(m, ([k, v]) => [k, v.puntaje]));
+  const inicial = soloPuntaje(detalleInicial);
+  const final = soloPuntaje(detalleFinal);
+
+  // Una fila por estudiante que rindió alguna de las dos; primero los más recientes.
+  const filas = Array.from(new Set([...detalleInicial.keys(), ...detalleFinal.keys()]))
+    .map((userId) => {
+      const ini = detalleInicial.get(userId);
+      const fin = detalleFinal.get(userId);
+      const persona = (ini ?? fin)!;
+      return { userId, nombre: persona.nombre, email: persona.email, ini, fin };
+    })
+    .sort((a, b) => {
+      const fa = (a.fin ?? a.ini)!.fecha.getTime();
+      const fb = (b.fin ?? b.ini)!.fecha.getTime();
+      return fb - fa;
+    });
+  const fecha = (d?: Date) => (d ? d.toLocaleDateString("es-EC", { day: "2-digit", month: "short", year: "numeric" }) : "");
   const promedio = (vals: number[]) => (vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null);
   const ambos = Array.from(final.keys()).filter((u) => inicial.has(u));
   const promInicialAmbos = promedio(ambos.map((u) => inicial.get(u)!));
@@ -60,6 +83,7 @@ export default async function AdminAutoevaluacionesPage() {
         {CONFIG.map((c) => {
           const ev = evaluaciones.find((e) => e.tipo === c.tipo);
           const respondieron = (c.tipo === TIPO_EVALUACION.INICIAL ? inicial : final).size;
+          const totalIntentos = ev?.intentos.length ?? 0;
           return (
             <div key={c.tipo} className="rounded-2xl border border-border bg-surface p-5 flex flex-col gap-3">
               <div className="flex items-center gap-2">
@@ -70,7 +94,8 @@ export default async function AdminAutoevaluacionesPage() {
               {ev ? (
                 <>
                   <p className="text-sm text-foreground">
-                    {ev.preguntas.length} pregunta(s) activa(s) de {ev._count.preguntas} · {respondieron} estudiante(s) la respondieron
+                    {ev.preguntas.length} pregunta(s) activa(s) de {ev._count.preguntas} · <strong>{totalIntentos} intento(s)</strong>{" "}
+                    de {respondieron} estudiante(s)
                   </p>
                   {ev.preguntas.length === 0 && (
                     <p className="flex items-center gap-1 text-xs text-amber-600">
@@ -115,6 +140,72 @@ export default async function AdminAutoevaluacionesPage() {
           </div>
         ))}
       </div>
+
+      <h2 className="font-semibold text-foreground mt-10 mb-1">Intentos registrados</h2>
+      <p className="text-sm text-muted-foreground mb-3">
+        Resultado de cada estudiante en la autoevaluación inicial y en la final (cada una se responde una sola vez).
+      </p>
+      {filas.length === 0 ? (
+        <p className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted-foreground">
+          Todavía ningún estudiante ha respondido las autoevaluaciones.
+        </p>
+      ) : (
+        <div className="rounded-2xl border border-border bg-surface overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
+            <thead>
+              <tr className="bg-background-secondary text-left text-xs text-muted-foreground">
+                <th scope="col" className="px-4 py-3 font-medium">Estudiante</th>
+                <th scope="col" className="px-4 py-3 font-medium">Autoevaluación inicial</th>
+                <th scope="col" className="px-4 py-3 font-medium">Autoevaluación final</th>
+                <th scope="col" className="px-4 py-3 font-medium">Mejora</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filas.map((f) => {
+                const mejora = f.ini && f.fin ? f.fin.puntaje - f.ini.puntaje : null;
+                return (
+                  <tr key={f.userId} className="border-t border-border">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-foreground">{f.nombre}</p>
+                      <p className="text-xs text-muted-foreground">{f.email}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      {f.ini ? (
+                        <>
+                          <span className="font-semibold text-foreground">{f.ini.puntaje}%</span>
+                          <span className="block text-xs text-muted-foreground">{fecha(f.ini.fecha)}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {f.fin ? (
+                        <>
+                          <span className="font-semibold text-foreground">{f.fin.puntaje}%</span>
+                          <span className="block text-xs text-muted-foreground">{fecha(f.fin.fecha)}</span>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Pendiente</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {mejora === null ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <span className={`font-semibold ${mejora > 0 ? "text-success" : mejora < 0 ? "text-red-600" : "text-foreground"}`}>
+                          {mejora > 0 ? "+" : ""}
+                          {mejora} pts
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

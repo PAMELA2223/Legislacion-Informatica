@@ -182,3 +182,10 @@ A	docs/img/panel-infografias-chatbot/1-eliminar-modulo.png
 A	docs/img/panel-infografias-chatbot/2-infografia-en-modulo.png
 A	docs/img/panel-infografias-chatbot/3-celular-infografia-ampliada-chatbot.png
 A	docs/panel-infografias-chatbot.md
+
+=== AJUSTE: menú (Autoevaluación entre Inicio y Módulos) e intentos de autoevaluaciones ===
+M	apps/web/src/app/(dashboard)/admin/autoevaluaciones/page.tsx
+M	apps/web/src/app/(dashboard)/autoevaluacion/final/page.tsx
+M	apps/web/src/app/(dashboard)/autoevaluacion/inicial/page.tsx
+M	apps/web/src/lib/navigation.test.ts
+M	apps/web/src/lib/navigation.ts
