@@ -28,7 +28,7 @@ export class AnthropicChatModel implements IChatLanguageModel {
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
       },
-      body: JSON.stringify({ model: this.modelo, max_tokens: 800, system: sistema, messages: mensajes }),
+      body: JSON.stringify({ model: this.modelo, max_tokens: 600, system: sistema, messages: mensajes }),
       signal: AbortSignal.timeout(30_000),
       cache: "no-store",
     });

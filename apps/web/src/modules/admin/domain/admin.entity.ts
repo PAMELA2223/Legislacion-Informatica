@@ -263,3 +263,19 @@ export interface AdminForumThreadRow {
 }
 
 export const ROLES_DISPONIBLES: Rol[] = ["ADMINISTRADOR", "ESTUDIANTE", "INVITADO"];
+
+export interface AdminModuleInfographicRow {
+  id: string; // id de la lección de tipo INFOGRAFIA
+  titulo: string;
+  descripcion: string | null;
+  urlImagen: string | null;
+  courseId: string;
+}
+
+export interface AdminModuleInfographicsOverview {
+  modulos: { id: string; numero: number; titulo: string; activo: boolean; infografias: AdminModuleInfographicRow[] }[];
+  /** Registros de la tabla antigua `infographics` que aún no están en ningún módulo. */
+  sinModulo: { id: string; titulo: string; descripcion: string; url: string; fuente: string }[];
+  /** Cuántas infografías incluidas en la plataforma se pueden vincular automáticamente. */
+  incluidasPendientes: number;
+}

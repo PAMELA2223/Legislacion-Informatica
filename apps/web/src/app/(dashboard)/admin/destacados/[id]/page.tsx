@@ -15,7 +15,7 @@ export default async function EditarDestacadoPage({ params }: { params: Promise<
   } catch {
     notFound();
   }
-  const cursos = await prisma.course.findMany({ orderBy: { orden: "asc" }, select: { id: true, titulo: true, slug: true } });
+  const cursos = await prisma.course.findMany({ where: { eliminadoEn: null }, orderBy: { orden: "asc" }, select: { id: true, titulo: true, slug: true } });
   return (
     <div>
       <h1 className="text-2xl font-bold text-foreground mb-8">Editar contenido destacado</h1>

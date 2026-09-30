@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { getYoutubeEmbedUrl } from "@/lib/youtube";
+import { InfographicViewer } from "./infographic-viewer";
 
 export interface LeccionVista {
   id: string;
@@ -82,13 +83,18 @@ export function LessonContent({ leccion }: { leccion: LeccionVista }) {
     case "INFOGRAFIA":
     case "MAPA_CONCEPTUAL":
       if (!url) return <Pendiente texto="Recurso visual pendiente de cargar." />;
-      return (
-        <div className="flex flex-col gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt={leccion.titulo} className="w-full max-h-[70vh] rounded-xl bg-foreground/5 object-contain" />
-          <EnlaceExterno url={url} texto="Ver la imagen en tamaño completo" />
-        </div>
-      );
+      // Algunas infografías publicadas por instituciones son PDF, no imágenes.
+      if (/\.pdf(\?|#|$)/i.test(url)) {
+        return (
+          <div className="flex flex-col gap-2">
+            <div className="aspect-[3/4] sm:aspect-[4/3] w-full overflow-hidden rounded-xl bg-foreground/5">
+              <iframe src={url} title={leccion.titulo} className="h-full w-full" />
+            </div>
+            <EnlaceExterno url={url} texto="Abrir la infografía en otra pestaña" />
+          </div>
+        );
+      }
+      return <InfographicViewer url={url} titulo={leccion.titulo} descripcion={leccion.contenido} />;
     case "PODCAST":
       if (!url) return <Pendiente texto="Audio pendiente de cargar." />;
       return (

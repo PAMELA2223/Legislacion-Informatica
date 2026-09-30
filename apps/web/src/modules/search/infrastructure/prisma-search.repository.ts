@@ -27,7 +27,8 @@ export class PrismaSearchRepository implements ISearchRepository {
       `,
       this.prisma.$queryRaw<{ id: string; slug: string; titulo: string; descripcion: string }[]>`
         SELECT id, slug, titulo, descripcion FROM courses
-        WHERE to_tsvector('spanish', titulo || ' ' || descripcion)
+        WHERE activo = true AND eliminado_en IS NULL
+          AND to_tsvector('spanish', titulo || ' ' || descripcion)
               @@ plainto_tsquery('spanish', ${query})
         LIMIT 8
       `,

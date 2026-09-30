@@ -10,8 +10,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
-  const curso = await prisma.course.findUnique({ where: { id }, select: { titulo: true } });
-  if (!curso) return NextResponse.json({ error: "Módulo no encontrado." }, { status: 404 });
+  const curso = await prisma.course.findUnique({ where: { id }, select: { titulo: true, eliminadoEn: true } });
+  if (!curso || curso.eliminadoEn) return NextResponse.json({ error: "Módulo no encontrado." }, { status: 404 });
   try {
     const r = await new CrearEvaluacionUseCase(new PrismaAdminRepository(prisma)).execute(admin.id, {
       titulo: `Evaluación: ${curso.titulo}`,

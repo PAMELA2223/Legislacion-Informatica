@@ -1,6 +1,7 @@
 import type { Rol } from "@prisma/client";
 import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
 import { validarPregunta } from "@/modules/evaluations/domain/question-validation";
+import { validarInfografia, type DatosInfografia } from "../domain/infographic";
 import { TIPO_EVALUACION } from "@/modules/evaluations/domain/evaluation-types";
 import type {
   AdminFaqRow,
@@ -576,5 +577,45 @@ export class EliminarReferenciaInternacionalUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   async execute(actorId: string, id: string) {
     return this.repo.eliminarReferenciaInternacional(actorId, id);
+  }
+}
+
+// ---------------- Infografías de los módulos ----------------
+
+export class ListarInfografiasDeModulosUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  execute() {
+    return this.repo.listarInfografiasDeModulos();
+  }
+}
+
+export class ObtenerInfografiaDeModuloUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(id: string) {
+    const i = await this.repo.obtenerInfografiaDeModulo(id);
+    if (!i) throw new Error("Infografía no encontrada.");
+    return i;
+  }
+}
+
+export class GuardarInfografiaDeModuloUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  execute(actorId: string, id: string | null, data: Partial<DatosInfografia> | null) {
+    return this.repo.guardarInfografiaDeModulo(actorId, id, validarInfografia(data));
+  }
+}
+
+export class AsociarInfografiaAntiguaUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  execute(actorId: string, infographicId: string, courseId: unknown) {
+    if (typeof courseId !== "string" || !courseId) throw new Error("Selecciona un módulo.");
+    return this.repo.asociarInfografiaAntigua(actorId, infographicId, courseId);
+  }
+}
+
+export class VincularInfografiasIncluidasUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  execute(actorId: string) {
+    return this.repo.vincularInfografiasIncluidas(actorId);
   }
 }

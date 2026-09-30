@@ -49,7 +49,7 @@ export default async function AdminCursoDetallePage({
       </p>
       <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
         <h1 className="text-2xl font-bold text-foreground">{curso.titulo}</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ActionButton
             url={`/api/admin/cursos/${curso.id}`}
             method="PUT"
@@ -64,6 +64,19 @@ export default async function AdminCursoDetallePage({
               <Pencil className="w-4 h-4 mr-2" /> Editar información
             </Button>
           </Link>
+          <DeleteButton
+            url={`/api/admin/cursos/${curso.id}`}
+            etiqueta="Eliminar módulo"
+            redirectTo="/admin/cursos"
+            titulo="¿Está seguro de que desea eliminar este módulo?"
+            confirmMessage={
+              <>
+                <strong className="text-foreground">{curso.titulo}</strong> dejará de aparecer en el panel, en la lista
+                de módulos y para los estudiantes. Si hay estudiantes con progreso o resultados, estos se conservarán en
+                el historial; si no, se eliminarán también su contenido y su evaluación.
+              </>
+            }
+          />
         </div>
       </div>
       <p className="text-sm text-muted-foreground mb-2">{curso.descripcion}</p>

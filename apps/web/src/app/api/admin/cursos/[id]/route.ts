@@ -22,10 +22,18 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
   try {
-    await new EliminarCursoUseCase(new PrismaAdminRepository(prisma)).execute(admin.id, id);
-    return NextResponse.json({ ok: true });
+    const r = await new EliminarCursoUseCase(new PrismaAdminRepository(prisma)).execute(admin.id, id);
+    return NextResponse.json({ ok: true, ...r });
   } catch (error) {
-    // 409: conflicto con datos relacionados (estudiantes con progreso/resultados)
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Error al eliminar el módulo." }, { status: 409 });
+    // Se devuelve el motivo real para que el administrador lo vea (no un fallo silencioso).
+    console.error("[admin] Error al eliminar módulo", id, error);
+    return NextResponse.json(
+      {
+        error:
+          "No se pudo eliminar el módulo. " +
+          (error instanceof Error ? error.message : "Ocurrió un error inesperado en el servidor."),
+      },
+      { status: 400 }
+    );
   }
 }

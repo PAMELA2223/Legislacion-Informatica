@@ -107,6 +107,8 @@ export const ITEMS_SIDEBAR_ADMIN: EnlaceNav[] = [
   { href: "/admin/autoevaluaciones", label: "Autoevaluaciones", roles: ["ADMINISTRADOR"], icon: "ClipboardCheck" },
   { href: "/admin/evaluaciones", label: "Evaluaciones", roles: ["ADMINISTRADOR"], icon: "ClipboardList" },
   { href: "/admin/destacados", label: "Lo más destacado", roles: ["ADMINISTRADOR"], icon: "Sparkles" },
+  { href: "/admin/infografias", label: "Infografías", roles: ["ADMINISTRADOR"], icon: "ImageIcon" },
+  { href: "/admin/chatbot", label: "Chatbot", roles: ["ADMINISTRADOR"], icon: "Bot" },
   { href: "/admin/casos-practicos", label: "Casos prácticos", roles: ["ADMINISTRADOR"], icon: "Scale" },
   { href: "/admin/glosario", label: "Glosario", roles: ["ADMINISTRADOR"], icon: "BookMarked" },
   { href: "/admin/noticias", label: "Noticias", roles: ["ADMINISTRADOR"], icon: "Newspaper" },
@@ -133,7 +135,15 @@ const GRUPOS_ADMIN: { titulo: string; hrefs: string[] }[] = [
   { titulo: "Panel", hrefs: ["/admin/estadisticas", "/admin/usuarios"] },
   {
     titulo: "Aprendizaje",
-    hrefs: ["/admin/cursos", "/admin/autoevaluaciones", "/admin/evaluaciones", "/admin/casos-practicos", "/admin/destacados"],
+    hrefs: [
+      "/admin/cursos",
+      "/admin/evaluaciones",
+      "/admin/autoevaluaciones",
+      "/admin/infografias",
+      "/admin/casos-practicos",
+      "/admin/destacados",
+      "/admin/chatbot",
+    ],
   },
   {
     titulo: "Recursos y comunidad",

@@ -77,7 +77,7 @@ export default async function AdminAutoevaluacionesPage() {
                       <AlertTriangle className="w-3.5 h-3.5" /> Sin preguntas activas: no se exigirá a los estudiantes.
                     </p>
                   )}
-                  <Link href={`/admin/evaluaciones/${ev.id}`} className="mt-auto">
+                  <Link href={`/admin/autoevaluaciones/${ev.id}`} className="mt-auto">
                     <Button>Gestionar preguntas</Button>
                   </Link>
                 </>

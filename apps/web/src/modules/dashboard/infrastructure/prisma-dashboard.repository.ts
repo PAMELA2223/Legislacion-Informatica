@@ -26,7 +26,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       this.prisma.user.findUniqueOrThrow({ where: { id: userId } }),
       this.prisma.enrollment.findMany({ where: { userId }, include: { course: true } }),
       // Solo evaluaciones de módulos activos (las autoevaluaciones se muestran aparte).
-      this.prisma.evaluation.count({ where: { tipo: "modulo", course: { activo: true } } }),
+      this.prisma.evaluation.count({ where: { tipo: "modulo", course: { activo: true, eliminadoEn: null } } }),
       this.prisma.quizAttempt.findMany({
         where: { userId },
         orderBy: { fecha: "desc" },
@@ -110,7 +110,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       progresoGeneral,
       modulosCompletados,
       modulosEnCurso,
-      totalModulos: await this.prisma.course.count({ where: { activo: true } }),
+      totalModulos: await this.prisma.course.count({ where: { activo: true, eliminadoEn: null } }),
       evaluacionesRealizadas: evaluacionesRealizadasIds.size,
       evaluacionesPendientes,
       promedioCalificaciones,
@@ -154,7 +154,7 @@ export class PrismaDashboardRepository implements IDashboardRepository {
       this.prisma.user.count(),
       this.prisma.user.count({ where: { rol: "ESTUDIANTE" } }),
       this.prisma.user.count({ where: { rol: "ADMINISTRADOR" } }),
-      this.prisma.course.findMany(),
+      this.prisma.course.findMany({ where: { eliminadoEn: null } }),
       this.prisma.enrollment.findMany(),
       this.prisma.libraryDocument.findMany({ orderBy: { descargas: "desc" } }),
       this.prisma.caseAttempt.count(),

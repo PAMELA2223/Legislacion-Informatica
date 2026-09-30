@@ -559,6 +559,10 @@ model Course {
   propositoAcademico String @db.Text
   orden       Int
   activo      Boolean  @default(true) // un módulo inactivo no aparece para el estudiante ni cuenta para el progreso
+  // Eliminación lógica: un módulo con resultados o progreso de estudiantes
+  // no se borra físicamente (se perderían esos datos); se archiva y deja de
+  // aparecer en toda la plataforma. null = módulo vigente.
+  eliminadoEn DateTime? @map("eliminado_en")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

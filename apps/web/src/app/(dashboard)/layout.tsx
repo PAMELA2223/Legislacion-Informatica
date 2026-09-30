@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { requireAutenticado } from "@/lib/authorization";
 import { obtenerSeccionesSidebar } from "@/lib/navigation";
 import { ChatbotWidget } from "@/modules/chatbot/presentation/chatbot-widget";
+import { Avisos } from "@/components/ui/avisos";
 
 // Punto de protección central de TODA el área autenticada de la plataforma
 // (/dashboard, /modulos, /biblioteca, /evaluaciones, /admin, etc).
@@ -31,8 +32,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </main>
       </div>
-      {/* Chatbot educativo (botón flotante), para el estudiante. */}
-      {ctx.rol === "ESTUDIANTE" && <ChatbotWidget />}
+      {/* Chatbot educativo (botón flotante): estudiantes, y administradores para probarlo. */}
+      {(ctx.rol === "ESTUDIANTE" || ctx.rol === "ADMINISTRADOR") && <ChatbotWidget />}
+      <Avisos />
     </div>
   );
 }

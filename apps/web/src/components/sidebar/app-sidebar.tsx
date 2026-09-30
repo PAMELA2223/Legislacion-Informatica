@@ -34,6 +34,7 @@ import {
   ImageIcon,
   Globe2,
   Sparkles,
+  Bot,
   type LucideIcon,
 } from "lucide-react";
 import type { Rol } from "@prisma/client";
@@ -71,6 +72,7 @@ const ICONOS: Record<string, LucideIcon> = {
   ImageIcon,
   Globe2,
   Sparkles,
+  Bot,
 };
 
 function resolverIcono(nombre: string): LucideIcon {

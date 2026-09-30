@@ -10,6 +10,11 @@ autoevaluación de competencias y gamificación.
 > [`docs/flujo-aprendizaje-y-administracion.md`](./docs/flujo-aprendizaje-y-administracion.md)
 > — incluye los pasos para **actualizar una instalación existente**.
 >
+> **Última actualización:** evaluaciones y autoevaluaciones separadas, eliminación
+> correcta de módulos, infografías dentro de los módulos y chatbot mejorado. Ver
+> [`docs/panel-infografias-chatbot.md`](./docs/panel-infografias-chatbot.md)
+> (requiere una migración).
+>
 > Documentación extendida en [`/docs`](./docs):
 > - [`docs/manual-tecnico.md`](./docs/manual-tecnico.md) — arquitectura, stack, despliegue.
 > - [`docs/manual-usuario.md`](./docs/manual-usuario.md) — guía funcional por rol.

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function NuevaEvaluacionPage() {
   // Solo se ofrecen módulos que aún no tienen evaluación (una por módulo).
   const cursos = await prisma.course.findMany({
-    where: { evaluations: { none: { tipo: TIPO_EVALUACION.MODULO } } },
+    where: { eliminadoEn: null, evaluations: { none: { tipo: TIPO_EVALUACION.MODULO } } },
     orderBy: { orden: "asc" },
     select: { id: true, titulo: true },
   });

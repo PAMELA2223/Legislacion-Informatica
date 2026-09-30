@@ -1,10 +1,12 @@
-import type { FragmentoContexto, MensajeChat } from "./chatbot.entity";
+import type { ContextoPagina, FragmentoContexto, MensajeChat } from "./chatbot.entity";
 
-/** Busca contenido real de la plataforma relacionado con la consulta. */
+/** Acceso al contenido real de la plataforma. */
 export interface IChatContextRepository {
   buscarFragmentos(terminos: string[]): Promise<FragmentoContexto[]>;
-  /** Contexto de la página que está viendo el estudiante (ej. un módulo). */
-  describirPagina(ruta: string | null): Promise<string | null>;
+  /** Qué está viendo el estudiante (un módulo o la evaluación de un módulo). */
+  describirPagina(ruta: string | null): Promise<ContextoPagina | null>;
+  /** Enunciados de las preguntas activas de evaluaciones y autoevaluaciones. */
+  enunciadosDeEvaluaciones(): Promise<string[]>;
 }
 
 /** Servicio de lenguaje (IA). `disponible` = false si no hay clave configurada. */

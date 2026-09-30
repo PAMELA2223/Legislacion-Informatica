@@ -3,6 +3,8 @@
 
 import { PrismaClient } from "@prisma/client";
 
+import { INFOGRAFIAS_INCLUIDAS } from "../src/modules/admin/domain/infographic";
+
 const prisma = new PrismaClient();
 
 const MODULOS = [
@@ -157,7 +159,8 @@ function leccionesPara(tituloModulo: string) {
   return [
     { tipo: "VIDEO" as const, titulo: `Video introductorio: ${tituloModulo}`, orden: 1 },
     { tipo: "PDF" as const, titulo: `Lectura PDF: ${tituloModulo}`, orden: 2 },
-    { tipo: "INFOGRAFIA" as const, titulo: `Infografía: ${tituloModulo}`, orden: 3 },
+    // Si la plataforma incluye una infografía diseñada para este módulo, se vincula al crearlo.
+    { tipo: "INFOGRAFIA" as const, titulo: `Infografía: ${tituloModulo}`, orden: 3, urlRecurso: INFOGRAFIAS_INCLUIDAS[tituloModulo] },
     { tipo: "TEXTO" as const, titulo: `Ejemplos prácticos: ${tituloModulo}`, orden: 4, contenido: "Contenido de ejemplo pendiente de redacción editorial." },
     { tipo: "PODCAST" as const, titulo: `Podcast: ${tituloModulo}`, orden: 5 },
   ];

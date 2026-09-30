@@ -56,7 +56,7 @@ export class PrismaLearningPathRepository implements ILearningPathRepository {
         select: SELECT_EVAL_CON_CONTEO,
       }),
       this.prisma.course.findMany({
-        where: { activo: true },
+        where: { activo: true, eliminadoEn: null },
         orderBy: [{ orden: "asc" }, { numero: "asc" }],
         select: {
           id: true,

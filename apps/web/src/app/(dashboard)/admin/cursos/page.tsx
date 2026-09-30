@@ -98,7 +98,16 @@ export default async function AdminCursosPage() {
                     </Link>
                     <DeleteButton
                       url={`/api/admin/cursos/${c.id}`}
-                      confirmMessage={`¿Eliminar el módulo "${c.titulo}" con sus lecciones y su evaluación? Si hay estudiantes con progreso no se permitirá (desactívalo en su lugar).`}
+                      titulo="¿Está seguro de que desea eliminar este módulo?"
+                      confirmMessage={
+                        <>
+                          <strong className="text-foreground">{c.titulo}</strong> dejará de aparecer en el panel, en la
+                          lista de módulos y para los estudiantes.
+                          {c.totalInscritos > 0
+                            ? ` Tiene ${c.totalInscritos} estudiante(s) con progreso: sus resultados se conservarán en el historial.`
+                            : " Se eliminarán también su contenido y su evaluación."}
+                        </>
+                      }
                     />
                   </div>
                 </td>
@@ -110,6 +119,8 @@ export default async function AdminCursosPage() {
       </div>
       <p className="text-xs text-muted-foreground mt-3">
         Un módulo sin evaluación (o con evaluación sin preguntas activas) se completa solo revisando su contenido.
+        Si eliminas un módulo con estudiantes que ya avanzaron en él, se archiva: deja de mostrarse en toda la
+        plataforma, pero sus resultados se conservan.
       </p>
     </div>
   );

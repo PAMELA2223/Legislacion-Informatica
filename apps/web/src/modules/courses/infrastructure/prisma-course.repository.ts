@@ -16,7 +16,7 @@ export class PrismaCourseRepository implements ICourseRepository {
   async listarCursos(): Promise<Course[]> {
     // Solo módulos activos: los inactivos no forman parte del itinerario del estudiante.
     const cursos = await this.prisma.course.findMany({
-      where: { activo: true },
+      where: { activo: true, eliminadoEn: null },
       orderBy: { orden: "asc" },
       include: { lessons: { orderBy: { orden: "asc" } } },
     });
@@ -28,6 +28,7 @@ export class PrismaCourseRepository implements ICourseRepository {
       where: { slug },
       include: { lessons: { orderBy: { orden: "asc" } } },
     });
+    if (!curso || curso.eliminadoEn) return null; // un módulo eliminado (archivado) no existe para nadie
     return curso as unknown as Course | null;
   }
 

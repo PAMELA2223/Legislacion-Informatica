@@ -148,9 +148,12 @@ export function MobileNavDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Menú de navegación"
+        aria-hidden={!abierto}
+        // Cerrado: además de salir de la pantalla queda "invisible", para que sus
+        // enlaces no sean alcanzables con Tab ni los lea un lector de pantalla.
         className={`fixed inset-y-0 right-0 z-50 w-[85%] max-w-sm bg-surface shadow-card-lg lg:hidden flex flex-col
-          transition-transform duration-300 ease-out motion-reduce:transition-none
-          ${abierto ? "translate-x-0" : "translate-x-full"}`}
+          transition-[transform,visibility] duration-300 ease-out motion-reduce:transition-none
+          ${abierto ? "translate-x-0 visible" : "translate-x-full invisible"}`}
       >
         {/* Cabecera */}
         <div className="flex items-center justify-between px-5 h-16 bg-navy shrink-0">

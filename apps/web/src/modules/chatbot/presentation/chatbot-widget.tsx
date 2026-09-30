@@ -9,19 +9,21 @@ interface Mensaje {
   role: "user" | "assistant";
   content: string;
   fuentes?: { titulo: string; url: string }[];
+  sugerencias?: string[];
 }
 
 const SUGERENCIAS = [
-  "¿Qué es la legislación informática?",
-  "¿Qué derechos tengo sobre mis datos personales?",
-  "¿Qué diferencia hay entre firma electrónica y firma digital?",
+  "¿Qué es un delito informático?",
+  "¿Qué puedo hacer si alguien utiliza mis datos personales sin autorización?",
+  "Me llegó un correo pidiendo mi contraseña para no bloquear mi cuenta. ¿Qué es?",
+  "¿Qué diferencia existe entre privacidad y protección de datos?",
 ];
 
 const BIENVENIDA: Mensaje = {
   role: "assistant",
   content:
-    "¡Hola! Soy tu asistente de legislación informática. Puedo explicarte conceptos y temas de la plataforma. " +
-    "Soy una herramienta de apoyo: no resuelvo las evaluaciones por ti, pero te ayudo a comprender el contenido.",
+    "Hola, ¿qué deseas consultar? Puedes preguntarme con tus propias palabras: qué es un concepto, pedirme un ejemplo, " +
+    "que te lo explique más fácil o contarme una situación. No resuelvo evaluaciones, pero te ayudo a comprender los temas.",
 };
 
 /** Botón flotante con el chatbot educativo, disponible en toda el área autenticada. */
@@ -63,7 +65,7 @@ export function ChatbotWidget() {
       setMensajes((m) => [
         ...m,
         res.ok
-          ? { role: "assistant", content: data.respuesta, fuentes: data.fuentes }
+          ? { role: "assistant", content: data.respuesta, fuentes: data.fuentes, sugerencias: data.sugerencias }
           : { role: "assistant", content: data.error || "No pude responder en este momento." },
       ]);
     } catch {
@@ -84,7 +86,7 @@ export function ChatbotWidget() {
           <div className="flex items-center justify-between px-4 py-3 bg-navy text-white">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5" />
-              <span className="text-sm font-semibold">Asistente académico</span>
+              <span className="text-sm font-semibold">Asistente de Legislación Informática</span>
             </div>
             <button onClick={() => setAbierto(false)} aria-label="Cerrar asistente" className="rounded-lg p-1 hover:bg-white/10">
               <X className="w-4 h-4" />
@@ -113,6 +115,19 @@ export function ChatbotWidget() {
                 </div>
               </div>
             ))}
+            {!enviando && mensajes.length > 1 && mensajes[mensajes.length - 1].role === "assistant" && (
+              <div className="flex flex-wrap gap-2" aria-label="Preguntas de seguimiento sugeridas">
+                {(mensajes[mensajes.length - 1].sugerencias ?? []).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => enviar(s)}
+                    className="text-xs rounded-full border border-primary/40 px-3 py-1.5 text-primary hover:bg-primary/10"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
             {mensajes.length === 1 && (
               <div className="flex flex-col gap-2">
                 {SUGERENCIAS.map((s) => (

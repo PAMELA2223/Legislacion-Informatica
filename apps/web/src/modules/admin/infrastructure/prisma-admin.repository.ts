@@ -2,6 +2,12 @@ import { Prisma, type PrismaClient, type Rol } from "@prisma/client";
 import { registrarLog } from "@/lib/audit-log";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { TIPO_EVALUACION } from "@/modules/evaluations/domain/evaluation-types";
+import {
+  decidirEliminacionModulo,
+  mensajeEliminacionModulo,
+  type ModoEliminacionModulo,
+} from "../domain/module-deletion";
+import { INFOGRAFIAS_INCLUIDAS, type DatosInfografia } from "../domain/infographic";
 
 /** "Protección de Datos" → "proteccion-de-datos" */
 function generarSlug(texto: string): string {
@@ -29,6 +35,8 @@ import type {
   AdminCourseDetailRow,
   DatosCurso,
   DatosLeccion,
+  AdminModuleInfographicRow,
+  AdminModuleInfographicsOverview,
   AdminEvaluationRow,
   AdminEvaluationDetailRow,
   DatosPregunta,
@@ -257,6 +265,7 @@ export class PrismaAdminRepository implements IAdminRepository {
 
   async listarCursos(): Promise<AdminCourseRow[]> {
     const cursos = await this.prisma.course.findMany({
+      where: { eliminadoEn: null },
       orderBy: [{ orden: "asc" }, { numero: "asc" }],
       include: {
         _count: { select: { lessons: true, enrollments: true } },
@@ -297,7 +306,7 @@ export class PrismaAdminRepository implements IAdminRepository {
         },
       },
     });
-    if (!curso) return null;
+    if (!curso || curso.eliminadoEn) return null;
     const ev = curso.evaluations[0];
     return {
       id: curso.id,
@@ -339,7 +348,7 @@ export class PrismaAdminRepository implements IAdminRepository {
   }
 
   async crearCurso(actorId: string, data: DatosCurso): Promise<{ id: string }> {
-    const agg = await this.prisma.course.aggregate({ _max: { numero: true, orden: true } });
+    const agg = await this.prisma.course.aggregate({ where: { eliminadoEn: null }, _max: { numero: true, orden: true } });
     const curso = await this.prisma.course.create({
       data: {
         titulo: data.titulo,
@@ -381,41 +390,196 @@ export class PrismaAdminRepository implements IAdminRepository {
     await registrarLog(this.prisma, actorId, "EDITAR", "modulo", id);
   }
 
-  async eliminarCurso(actorId: string, id: string): Promise<void> {
+  async eliminarCurso(actorId: string, id: string): Promise<{ modo: ModoEliminacionModulo; mensaje: string }> {
     const curso = await this.prisma.course.findUnique({
       where: { id },
-      select: { titulo: true, evaluations: { select: { id: true } } },
+      select: { titulo: true, eliminadoEn: true, evaluations: { select: { id: true } } },
     });
-    if (!curso) throw new Error("Módulo no encontrado.");
+    if (!curso || curso.eliminadoEn) throw new Error("El módulo no existe o ya fue eliminado.");
 
-    // Protección contra pérdida accidental de información: si hay
-    // estudiantes con progreso o resultados, no se elimina (se sugiere
-    // desactivarlo, que lo oculta sin borrar datos).
     const idsEval = curso.evaluations.map((e) => e.id);
-    const [inscritos, intentos, progreso] = await Promise.all([
+    const [inscritos, intentosEvaluacion, leccionesCompletadas] = await Promise.all([
       this.prisma.enrollment.count({ where: { courseId: id } }),
       idsEval.length ? this.prisma.quizAttempt.count({ where: { evaluationId: { in: idsEval } } }) : 0,
       this.prisma.lessonProgress.count({ where: { lesson: { courseId: id } } }),
     ]);
-    if (inscritos + intentos + progreso > 0) {
-      throw new Error(
-        `No se puede eliminar "${curso.titulo}": tiene ${inscritos} estudiante(s) con progreso y ${intentos} ` +
-          "intento(s) de evaluación registrados. Desactívalo para ocultarlo sin perder esos resultados."
-      );
+    const datos = { inscritos, intentosEvaluacion, leccionesCompletadas };
+    const modo = decidirEliminacionModulo(datos);
+
+    if (modo === "fisica") {
+      await this.prisma.$transaction([
+        // Las preguntas se eliminan en cascada con cada evaluación (no hay intentos).
+        this.prisma.evaluation.deleteMany({ where: { courseId: id } }),
+        // Lecciones (contenido, videos, infografías) en cascada; destacados quedan sin módulo (SetNull).
+        this.prisma.course.delete({ where: { id } }),
+      ]);
+    } else {
+      // Eliminación lógica: se archiva. `numero` es único, así que se mueve a
+      // un valor negativo libre para no bloquear la numeración de los demás.
+      const agg = await this.prisma.course.aggregate({ _min: { numero: true } });
+      const numeroArchivado = Math.min(0, agg._min.numero ?? 0) - 1;
+      await this.prisma.$transaction([
+        this.prisma.course.update({
+          where: { id },
+          data: { eliminadoEn: new Date(), activo: false, numero: numeroArchivado },
+        }),
+        // Un destacado que apuntaba al módulo dejaría un enlace roto.
+        this.prisma.featuredContent.updateMany({ where: { courseId: id, tipo: "MODULO" }, data: { activo: false } }),
+        this.prisma.featuredContent.updateMany({ where: { courseId: id }, data: { courseId: null } }),
+      ]);
     }
 
-    await this.prisma.$transaction([
-      // Las preguntas se eliminan en cascada con cada evaluación.
-      this.prisma.evaluation.deleteMany({ where: { courseId: id } }),
-      // Las lecciones se eliminan en cascada con el módulo; los destacados
-      // que apuntaban a él quedan sin módulo relacionado (SetNull).
-      this.prisma.course.delete({ where: { id } }),
+    await this.renumerarModulos();
+    await registrarLog(this.prisma, actorId, "ELIMINAR", "modulo", `${id} (${curso.titulo}) — eliminación ${modo}`);
+    return { modo, mensaje: mensajeEliminacionModulo(curso.titulo, modo, datos) };
+  }
+
+  // ---------------- Infografías de los módulos ----------------
+
+  async listarInfografiasDeModulos(): Promise<AdminModuleInfographicsOverview> {
+    const [modulos, antiguas] = await Promise.all([
+      this.prisma.course.findMany({
+        where: { eliminadoEn: null },
+        orderBy: [{ orden: "asc" }, { numero: "asc" }],
+        select: {
+          id: true,
+          numero: true,
+          titulo: true,
+          activo: true,
+          lessons: {
+            where: { tipo: "INFOGRAFIA" },
+            orderBy: { orden: "asc" },
+            select: { id: true, titulo: true, contenido: true, urlRecurso: true, courseId: true },
+          },
+        },
+      }),
+      this.prisma.infographic.findMany({ orderBy: { createdAt: "asc" } }),
     ]);
-    await registrarLog(this.prisma, actorId, "ELIMINAR", "modulo", `${id} (${curso.titulo})`);
+    const urlsEnModulos = new Set(modulos.flatMap((m) => m.lessons.map((l) => l.urlRecurso).filter(Boolean)));
+    const incluidasPendientes = modulos.filter(
+      (m) => INFOGRAFIAS_INCLUIDAS[m.titulo] && !m.lessons.some((l) => l.urlRecurso === INFOGRAFIAS_INCLUIDAS[m.titulo])
+    ).length;
+    return {
+      modulos: modulos.map((m) => ({
+        id: m.id,
+        numero: m.numero,
+        titulo: m.titulo,
+        activo: m.activo,
+        infografias: m.lessons.map((l) => ({
+          id: l.id,
+          titulo: l.titulo,
+          descripcion: l.contenido,
+          urlImagen: l.urlRecurso,
+          courseId: l.courseId,
+        })),
+      })),
+      sinModulo: antiguas
+        .filter((a) => !urlsEnModulos.has(a.url))
+        .map((a) => ({ id: a.id, titulo: a.titulo, descripcion: a.descripcion, url: a.url, fuente: a.fuente })),
+      incluidasPendientes,
+    };
+  }
+
+  async obtenerInfografiaDeModulo(id: string): Promise<AdminModuleInfographicRow | null> {
+    const l = await this.prisma.lesson.findUnique({
+      where: { id },
+      select: { id: true, titulo: true, contenido: true, urlRecurso: true, courseId: true, tipo: true },
+    });
+    if (!l || l.tipo !== "INFOGRAFIA") return null;
+    return { id: l.id, titulo: l.titulo, descripcion: l.contenido, urlImagen: l.urlRecurso, courseId: l.courseId };
+  }
+
+  private async siguienteOrdenLeccion(courseId: string) {
+    const agg = await this.prisma.lesson.aggregate({ where: { courseId }, _max: { orden: true } });
+    return (agg._max.orden ?? 0) + 1;
+  }
+
+  async guardarInfografiaDeModulo(actorId: string, id: string | null, data: DatosInfografia): Promise<{ id: string }> {
+    const curso = await this.prisma.course.findUnique({ where: { id: data.courseId }, select: { eliminadoEn: true } });
+    if (!curso || curso.eliminadoEn) throw new Error("El módulo seleccionado no existe.");
+    const campos = { titulo: data.titulo, urlRecurso: data.urlImagen, contenido: data.descripcion ?? null };
+
+    if (!id) {
+      const l = await this.prisma.lesson.create({
+        data: { ...campos, tipo: "INFOGRAFIA", courseId: data.courseId, orden: await this.siguienteOrdenLeccion(data.courseId) },
+      });
+      await registrarLog(this.prisma, actorId, "CREAR", "infografia", l.id);
+      return { id: l.id };
+    }
+
+    const actual = await this.prisma.lesson.findUnique({ where: { id }, select: { tipo: true, courseId: true, course: { select: { activo: true } } } });
+    if (!actual || actual.tipo !== "INFOGRAFIA") throw new Error("Infografía no encontrada.");
+    const cambiaModulo = actual.courseId !== data.courseId;
+    if (cambiaModulo && actual.course.activo) {
+      // No dejar un módulo activo sin contenido al mover su única lección.
+      const restantes = await this.prisma.lesson.count({ where: { courseId: actual.courseId } });
+      if (restantes <= 1) throw new Error("Es la única lección de su módulo activo; no se puede mover a otro módulo.");
+    }
+    await this.prisma.lesson.update({
+      where: { id },
+      data: { ...campos, ...(cambiaModulo ? { courseId: data.courseId, orden: await this.siguienteOrdenLeccion(data.courseId) } : {}) },
+    });
+    await registrarLog(this.prisma, actorId, "EDITAR", "infografia", id);
+    return { id };
+  }
+
+  async asociarInfografiaAntigua(actorId: string, infographicId: string, courseId: string): Promise<void> {
+    const antigua = await this.prisma.infographic.findUnique({ where: { id: infographicId } });
+    if (!antigua) throw new Error("Infografía no encontrada.");
+    // Se copia al módulo como lección; el registro original se conserva.
+    await this.guardarInfografiaDeModulo(actorId, null, {
+      courseId,
+      titulo: antigua.titulo,
+      urlImagen: antigua.url,
+      descripcion: `${antigua.descripcion}${antigua.fuente ? ` (Fuente: ${antigua.fuente})` : ""}`,
+    });
+  }
+
+  async vincularInfografiasIncluidas(actorId: string): Promise<{ vinculadas: number }> {
+    const modulos = await this.prisma.course.findMany({
+      where: { eliminadoEn: null, titulo: { in: Object.keys(INFOGRAFIAS_INCLUIDAS) } },
+      select: { id: true, titulo: true, lessons: { where: { tipo: "INFOGRAFIA" }, orderBy: { orden: "asc" }, select: { id: true, urlRecurso: true } } },
+    });
+    let vinculadas = 0;
+    for (const m of modulos) {
+      const url = INFOGRAFIAS_INCLUIDAS[m.titulo];
+      if (m.lessons.some((l) => l.urlRecurso === url)) continue;
+      const vacia = m.lessons.find((l) => !l.urlRecurso);
+      if (vacia) {
+        // La lección "Infografía: …" que creó el seed sin imagen.
+        await this.prisma.lesson.update({ where: { id: vacia.id }, data: { urlRecurso: url } });
+      } else {
+        await this.prisma.lesson.create({
+          data: { courseId: m.id, tipo: "INFOGRAFIA", titulo: `Infografía: ${m.titulo}`, urlRecurso: url, orden: await this.siguienteOrdenLeccion(m.id) },
+        });
+      }
+      vinculadas++;
+    }
+    if (vinculadas) await registrarLog(this.prisma, actorId, "EDITAR", "infografia", `Vinculadas ${vinculadas} infografías incluidas`);
+    return { vinculadas };
+  }
+
+  /** Deja los módulos vigentes numerados 1..n según su orden (sin huecos tras eliminar). */
+  private async renumerarModulos() {
+    const vigentes = await this.prisma.course.findMany({
+      where: { eliminadoEn: null },
+      orderBy: [{ orden: "asc" }, { numero: "asc" }],
+      select: { id: true, numero: true, orden: true },
+    });
+    if (vigentes.every((c, i) => c.numero === i + 1 && c.orden === i + 1)) return;
+    const agg = await this.prisma.course.aggregate({ _min: { numero: true } });
+    const base = Math.min(0, agg._min.numero ?? 0) - 1;
+    await this.prisma.$transaction([
+      // Fase 1: valores temporales negativos (evita choques con la restricción única).
+      ...vigentes.map((c, i) => this.prisma.course.update({ where: { id: c.id }, data: { numero: base - i - 1 } })),
+      // Fase 2: numeración definitiva.
+      ...vigentes.map((c, i) => this.prisma.course.update({ where: { id: c.id }, data: { numero: i + 1, orden: i + 1 } })),
+    ]);
   }
 
   async moverCurso(actorId: string, id: string, direccion: "arriba" | "abajo"): Promise<void> {
     const cursos = await this.prisma.course.findMany({
+      where: { eliminadoEn: null },
       orderBy: [{ orden: "asc" }, { numero: "asc" }],
       select: { id: true, numero: true },
     });
@@ -485,8 +649,15 @@ export class PrismaAdminRepository implements IAdminRepository {
   }
 
   async listarEvaluaciones(): Promise<AdminEvaluationRow[]> {
+    // Solo evaluaciones de MÓDULOS (las autoevaluaciones inicial y final se
+    // administran exclusivamente en "Autoevaluaciones"). Se excluyen las de
+    // módulos eliminados (quedan solo como historial).
     const evaluaciones = await this.prisma.evaluation.findMany({
-      orderBy: [{ tipo: "asc" }, { orden: "asc" }, { createdAt: "asc" }],
+      where: {
+        tipo: TIPO_EVALUACION.MODULO,
+        OR: [{ courseId: null }, { course: { eliminadoEn: null } }],
+      },
+      orderBy: [{ orden: "asc" }, { createdAt: "asc" }],
       include: {
         course: { select: { titulo: true } },
         _count: { select: { preguntas: true, intentos: true } },

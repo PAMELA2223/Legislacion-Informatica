@@ -1,3 +1,4 @@
+import type { DatosInfografia } from "./infographic";
 import type { Rol } from "@prisma/client";
 import type {
   AdminCaseStudyRow,
@@ -6,6 +7,8 @@ import type {
   AdminCourseDetailRow,
   DatosCurso,
   DatosLeccion,
+  AdminModuleInfographicRow,
+  AdminModuleInfographicsOverview,
   AdminEvaluationRow,
   AdminEvaluationDetailRow,
   DatosEvaluacion,
@@ -76,8 +79,15 @@ export interface IAdminRepository {
   obtenerCursoConLecciones(id: string): Promise<AdminCourseDetailRow | null>;
   crearCurso(actorId: string, data: DatosCurso): Promise<{ id: string }>;
   actualizarCurso(actorId: string, id: string, data: DatosCurso): Promise<void>;
-  eliminarCurso(actorId: string, id: string): Promise<void>;
+  eliminarCurso(actorId: string, id: string): Promise<{ modo: "fisica" | "logica"; mensaje: string }>;
   moverCurso(actorId: string, id: string, direccion: "arriba" | "abajo"): Promise<void>;
+
+  // Infografías (lecciones de tipo INFOGRAFIA asociadas a los módulos)
+  listarInfografiasDeModulos(): Promise<AdminModuleInfographicsOverview>;
+  obtenerInfografiaDeModulo(id: string): Promise<AdminModuleInfographicRow | null>;
+  guardarInfografiaDeModulo(actorId: string, id: string | null, data: DatosInfografia): Promise<{ id: string }>;
+  asociarInfografiaAntigua(actorId: string, infographicId: string, courseId: string): Promise<void>;
+  vincularInfografiasIncluidas(actorId: string): Promise<{ vinculadas: number }>;
   actualizarLeccion(actorId: string, leccionId: string, data: DatosLeccion): Promise<void>;
   crearLeccion(actorId: string, courseId: string, data: DatosLeccion): Promise<void>;
   eliminarLeccion(actorId: string, leccionId: string): Promise<void>;

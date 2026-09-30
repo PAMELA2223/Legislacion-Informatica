@@ -5,7 +5,7 @@ import { FeaturedForm } from "@/modules/admin/presentation/featured-form";
 export const dynamic = "force-dynamic";
 
 export default async function NuevoDestacadoPage() {
-  const cursos = await prisma.course.findMany({ orderBy: { orden: "asc" }, select: { id: true, titulo: true, slug: true } });
+  const cursos = await prisma.course.findMany({ where: { eliminadoEn: null }, orderBy: { orden: "asc" }, select: { id: true, titulo: true, slug: true } });
   return (
     <div>
       <h1 className="text-2xl font-bold text-foreground mb-8">Nuevo contenido destacado</h1>
