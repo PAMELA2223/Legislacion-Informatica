@@ -6,6 +6,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { IChatContextRepository } from "../domain/chatbot-ports.interface";
 import type { ContextoPagina, FragmentoContexto } from "../domain/chatbot.entity";
+import { FUENTES_CHATBOT, type FuenteChatbot } from "../domain/chatbot-config";
 import { LIMITES_CHAT } from "../domain/chatbot.entity";
 
 // Caché breve de enunciados de evaluación (cambian poco; evita una consulta por mensaje).
@@ -16,20 +17,30 @@ type Fila = { titulo: string; texto: string | null; url: string; rank: number };
 export class PrismaChatContextRepository implements IChatContextRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async buscarFragmentos(terminos: string[]): Promise<FragmentoContexto[]> {
+  async buscarFragmentos(terminos: string[], fuentes: FuenteChatbot[] = [...FUENTES_CHATBOT]): Promise<FragmentoContexto[]> {
     // Solo letras/dígitos: los términos se pasan como parámetro, pero se
     // sanean igualmente para que to_tsquery no falle por sintaxis.
     const limpios = terminos.map((t) => t.replace(/[^a-záéíóúüñ0-9]/gi, "")).filter((t) => t.length >= 3);
     if (limpios.length === 0) return [];
     const q = limpios.join(" | ");
 
-    const consultar = async (tipo: FragmentoContexto["tipo"], sql: Promise<Fila[]>) =>
-      (await sql.catch(() => [] as Fila[])).map((f) => ({ ...f, tipo }));
+    // Solo se consultan las fuentes habilitadas por el administrador. La
+    // consulta se construye de forma diferida para no ejecutar las demás.
+    const FUENTE_DE_TIPO: Record<FragmentoContexto["tipo"], FuenteChatbot> = {
+      LECCION: "LECCIONES",
+      MODULO: "LECCIONES",
+      GLOSARIO: "GLOSARIO",
+      FAQ: "FAQ",
+      ARTICULO: "BIBLIOTECA",
+      CASO: "CASOS",
+    };
+    const consultar = async (tipo: FragmentoContexto["tipo"], sql: () => Promise<Fila[]>) =>
+      fuentes.includes(FUENTE_DE_TIPO[tipo]) ? (await sql().catch(() => [] as Fila[])).map((f) => ({ ...f, tipo })) : [];
 
     const resultados = await Promise.all([
       consultar(
         "LECCION",
-        this.prisma.$queryRaw<Fila[]>`
+        () => this.prisma.$queryRaw<Fila[]>`
           SELECT l.titulo, l.contenido AS texto, '/modulos/' || c.slug AS url,
                  ts_rank(to_tsvector('spanish', l.titulo || ' ' || coalesce(l.contenido, '')), to_tsquery('spanish', ${q})) AS rank
           FROM lessons l JOIN courses c ON c.id = l.course_id
@@ -39,7 +50,7 @@ export class PrismaChatContextRepository implements IChatContextRepository {
       ),
       consultar(
         "MODULO",
-        this.prisma.$queryRaw<Fila[]>`
+        () => this.prisma.$queryRaw<Fila[]>`
           SELECT titulo, descripcion || ' ' || resumen AS texto, '/modulos/' || slug AS url,
                  ts_rank(to_tsvector('spanish', titulo || ' ' || descripcion || ' ' || resumen), to_tsquery('spanish', ${q})) AS rank
           FROM courses
@@ -49,7 +60,7 @@ export class PrismaChatContextRepository implements IChatContextRepository {
       ),
       consultar(
         "GLOSARIO",
-        this.prisma.$queryRaw<Fila[]>`
+        () => this.prisma.$queryRaw<Fila[]>`
           SELECT termino AS titulo, definicion AS texto, '/glosario?q=' || termino AS url,
                  ts_rank(to_tsvector('spanish', termino || ' ' || definicion), to_tsquery('spanish', ${q})) * 1.2 AS rank
           FROM glossary_terms
@@ -58,7 +69,7 @@ export class PrismaChatContextRepository implements IChatContextRepository {
       ),
       consultar(
         "FAQ",
-        this.prisma.$queryRaw<Fila[]>`
+        () => this.prisma.$queryRaw<Fila[]>`
           SELECT pregunta AS titulo, respuesta AS texto, '/preguntas-frecuentes' AS url,
                  ts_rank(to_tsvector('spanish', pregunta || ' ' || respuesta), to_tsquery('spanish', ${q})) AS rank
           FROM faq_items
@@ -68,7 +79,7 @@ export class PrismaChatContextRepository implements IChatContextRepository {
       ),
       consultar(
         "ARTICULO",
-        this.prisma.$queryRaw<Fila[]>`
+        () => this.prisma.$queryRaw<Fila[]>`
           SELECT d.titulo || ' — ' || a.numero || ': ' || a.titulo AS titulo, a.texto, '/biblioteca/' || a.document_id AS url,
                  ts_rank(to_tsvector('spanish', a.numero || ' ' || a.titulo || ' ' || a.texto), to_tsquery('spanish', ${q})) AS rank
           FROM library_articles a JOIN library_documents d ON d.id = a.document_id
@@ -77,7 +88,7 @@ export class PrismaChatContextRepository implements IChatContextRepository {
       ),
       consultar(
         "CASO",
-        this.prisma.$queryRaw<Fila[]>`
+        () => this.prisma.$queryRaw<Fila[]>`
           SELECT titulo, escenario || ' Normativa: ' || normativa_aplicable AS texto, '/casos-practicos/' || id AS url,
                  ts_rank(to_tsvector('spanish', titulo || ' ' || escenario), to_tsquery('spanish', ${q})) AS rank
           FROM case_studies

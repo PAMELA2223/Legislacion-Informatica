@@ -46,7 +46,17 @@ export async function EvaluationAdminDetail({ id, seccion }: { id: string; secci
       >
         {ETIQUETAS_TIPO_EVALUACION[evaluacion.tipo] ?? evaluacion.tipo}
       </span>
-      <h1 className="text-2xl font-bold text-foreground mb-1">{evaluacion.titulo}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
+        <h1 className="text-2xl font-bold text-foreground">{evaluacion.titulo}</h1>
+        {!esAuto && evaluacion.courseId && (
+          <Link
+            href={`/admin/evaluaciones/resultados?modulo=${evaluacion.courseId}`}
+            className="inline-flex items-center gap-2 rounded-xl border border-border-strong px-3 py-2 text-sm text-foreground hover:bg-background-secondary"
+          >
+            Ver resultados de los estudiantes
+          </Link>
+        )}
+      </div>
       <p className="text-sm text-muted-foreground mb-2">
         {activas} pregunta(s) activa(s) de {evaluacion.preguntas.length} · {evaluacion.totalIntentos} intento(s) registrados
       </p>

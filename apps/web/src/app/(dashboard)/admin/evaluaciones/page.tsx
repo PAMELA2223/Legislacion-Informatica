@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, AlertTriangle, CheckCircle2, ClipboardList } from "lucide-react";
+import { Plus, AlertTriangle, CheckCircle2, ClipboardList, BarChart3 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PrismaAdminRepository } from "@/modules/admin/infrastructure/prisma-admin.repository";
 import { ListarCursosAdminUseCase, ListarEvaluacionesAdminUseCase } from "@/modules/admin/application/admin.use-cases";
@@ -25,12 +25,20 @@ export default async function AdminEvaluacionesPage() {
     <div>
       <div className="flex items-center justify-between gap-4 mb-1 flex-wrap">
         <h1 className="text-2xl font-bold text-foreground">Evaluaciones de los módulos</h1>
-        <Link href="/admin/evaluaciones/nueva">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva evaluación
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/evaluaciones/resultados">
+            <Button variant="outline">
+              <BarChart3 className="w-4 h-4 mr-2" aria-hidden />
+              Resultados de los estudiantes
+            </Button>
+          </Link>
+          <Link href="/admin/evaluaciones/nueva">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva evaluación
+            </Button>
+          </Link>
+        </div>
       </div>
       <p className="text-sm text-muted-foreground mb-8">
         Cada módulo tiene una evaluación. El estudiante la rinde al terminar el contenido del módulo y necesita 70% para aprobar.
@@ -67,7 +75,12 @@ export default async function AdminEvaluacionesPage() {
                       )}
                     </p>
                   </Link>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href={`/admin/evaluaciones/resultados?modulo=${m.id}`}>
+                      <Button variant="outline">
+                        <BarChart3 className="w-4 h-4 mr-2" aria-hidden /> Resultados
+                      </Button>
+                    </Link>
                     <Link href={`/admin/evaluaciones/${ev.id}`}>
                       <Button variant="outline">Administrar preguntas</Button>
                     </Link>

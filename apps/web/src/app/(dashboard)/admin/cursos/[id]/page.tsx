@@ -167,9 +167,14 @@ export default async function AdminCursoDetallePage({
                 )}
               </div>
             </div>
-            <Link href={`/admin/evaluaciones/${curso.evaluacion.id}`}>
-              <Button>Gestionar preguntas</Button>
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href={`/admin/evaluaciones/resultados?modulo=${curso.id}`}>
+                <Button variant="outline">Ver resultados</Button>
+              </Link>
+              <Link href={`/admin/evaluaciones/${curso.evaluacion.id}`}>
+                <Button>Gestionar preguntas</Button>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-between gap-4 flex-wrap">

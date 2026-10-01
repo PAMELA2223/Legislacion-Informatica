@@ -3,6 +3,8 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { requireAutenticado } from "@/lib/authorization";
 import { obtenerSeccionesSidebar } from "@/lib/navigation";
 import { ChatbotWidget } from "@/modules/chatbot/presentation/chatbot-widget";
+import { PrismaChatbotConfigRepository } from "@/modules/chatbot/infrastructure/prisma-chatbot-config.repository";
+import { prisma } from "@/lib/prisma";
 import { Avisos } from "@/components/ui/avisos";
 
 // Punto de protección central de TODA el área autenticada de la plataforma
@@ -20,6 +22,8 @@ import { Avisos } from "@/components/ui/avisos";
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireAutenticado();
   const seccionesSidebar = obtenerSeccionesSidebar(ctx.rol);
+  const puedeUsarChatbot = ctx.rol === "ESTUDIANTE" || ctx.rol === "ADMINISTRADOR";
+  const chatbotActivo = puedeUsarChatbot && (await new PrismaChatbotConfigRepository(prisma).obtener()).activo;
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,12 +32,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppSidebar secciones={seccionesSidebar} rol={ctx.rol} nombre={ctx.nombre} email={ctx.email} />
         {/* min-w-0 + overflow-x-clip: ningún contenido ancho (tablas, iframes)
             puede provocar desplazamiento horizontal de toda la página. */}
-        <main id="contenido-principal" className="flex-1 min-w-0 overflow-x-clip">
+        {/* pb-24 cuando hay chatbot: deja espacio para la bolita flotante, de modo
+            que nunca tape el último botón o contenido de la página. */}
+        <main id="contenido-principal" className={`flex-1 min-w-0 overflow-x-clip ${chatbotActivo ? "pb-24" : ""}`}>
           {children}
         </main>
       </div>
       {/* Chatbot educativo (botón flotante): estudiantes, y administradores para probarlo. */}
-      {(ctx.rol === "ESTUDIANTE" || ctx.rol === "ADMINISTRADOR") && <ChatbotWidget />}
+      {chatbotActivo && <ChatbotWidget usuarioId={ctx.id} />}
       <Avisos />
     </div>
   );

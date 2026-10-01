@@ -2,6 +2,7 @@ import type { Rol } from "@prisma/client";
 import type { DatosDocumentoBiblioteca, IAdminRepository } from "../domain/admin-repository.interface";
 import { validarPregunta } from "@/modules/evaluations/domain/question-validation";
 import { validarInfografia, type DatosInfografia } from "../domain/infographic";
+import { resumirResultados } from "../domain/evaluation-results";
 import { TIPO_EVALUACION } from "@/modules/evaluations/domain/evaluation-types";
 import type {
   AdminFaqRow,
@@ -617,5 +618,23 @@ export class VincularInfografiasIncluidasUseCase {
   constructor(private readonly repo: IAdminRepository) {}
   execute(actorId: string) {
     return this.repo.vincularInfografiasIncluidas(actorId);
+  }
+}
+
+// ---------------- Resultados de evaluaciones de módulo (solo lectura) ----------------
+
+export class ListarModulosConResultadosUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  execute() {
+    return this.repo.listarModulosConResultados();
+  }
+}
+
+export class ObtenerResultadosEvaluacionModuloUseCase {
+  constructor(private readonly repo: IAdminRepository) {}
+  async execute(evaluationId: string) {
+    const datos = await this.repo.obtenerIntentosEvaluacionModulo(evaluationId);
+    if (!datos) throw new Error("Evaluación de módulo no encontrada.");
+    return { evaluacion: datos.evaluacion, ...resumirResultados(datos.intentos) };
   }
 }

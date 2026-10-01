@@ -10,7 +10,14 @@ autoevaluación de competencias y gamificación.
 > [`docs/flujo-aprendizaje-y-administracion.md`](./docs/flujo-aprendizaje-y-administracion.md)
 > — incluye los pasos para **actualizar una instalación existente**.
 >
-> **Última actualización:** evaluaciones y autoevaluaciones separadas, eliminación
+> **Chatbot:** bolita flotante con asistente de legislación informática,
+> configurable desde el panel (requiere una migración). Ver [`docs/chatbot.md`](./docs/chatbot.md).
+>
+> **Nuevo:** el administrador puede consultar los resultados de cada evaluación de
+> módulo por estudiante (aprobados, no aprobados, calificación, fecha e intentos)
+> y descargarlos en Excel. Ver [`docs/resultados-evaluaciones.md`](./docs/resultados-evaluaciones.md).
+>
+> **Actualización anterior:** evaluaciones y autoevaluaciones separadas, eliminación
 > correcta de módulos, infografías dentro de los módulos y chatbot mejorado. Ver
 > [`docs/panel-infografias-chatbot.md`](./docs/panel-infografias-chatbot.md)
 > (requiere una migración).

@@ -38,6 +38,10 @@ export interface RespuestaChat {
   sugerencias?: string[];
 }
 
+/** Respuesta cuando el contenido disponible no alcanza (el asistente no inventa). */
+export const MENSAJE_SIN_INFORMACION =
+  "No encuentro información suficiente sobre ese tema dentro del contenido disponible. Puedes consultar el material del módulo correspondiente.";
+
 export const LIMITES_CHAT = {
   maxCaracteresMensaje: 1500,
   maxMensajesHistorial: 12,
@@ -149,11 +153,11 @@ export class ChatbotRules {
       diferencia:
         "El estudiante pide una DIFERENCIA. Compara de forma directa: una frase por concepto y luego la diferencia clave en una frase. Si ayuda, termina con un ejemplo cotidiano que muestre la diferencia.",
       ejemplo:
-        "El estudiante pide un EJEMPLO" + (consulta.temaDelHistorial ? " del tema del que venían hablando" : "") + ". Da un ejemplo concreto y cotidiano (2-3 frases) y explica en una frase por qué encaja con el concepto. No repitas la definición completa.",
+        "El estudiante pide un EJEMPLO" + (consulta.temaDelHistorial ? " del tema del que venían hablando" : consulta.temaDelModulo ? " del tema del módulo que está estudiando" : "") + ". Da un ejemplo concreto y cotidiano (2-3 frases) y explica en una frase por qué encaja con el concepto. No repitas la definición completa.",
       simplificar:
-        "El estudiante pide una explicación MÁS SENCILLA" + (consulta.temaDelHistorial ? " de lo anterior" : "") + ". Usa palabras cotidianas, frases cortas y, si ayuda, una comparación con algo de la vida diaria. Máximo 3 frases, sin tecnicismos.",
+        "El estudiante pide una explicación MÁS SENCILLA" + (consulta.temaDelHistorial ? " de lo anterior" : consulta.temaDelModulo ? " del tema del módulo que está estudiando" : "") + ". Usa palabras cotidianas, frases cortas y, si ayuda, una comparación con algo de la vida diaria. Máximo 3 frases, sin tecnicismos.",
       situacion:
-        "El estudiante describe una SITUACIÓN. Primero identifica qué es (por ejemplo, \"esto es un caso de phishing\"), explícalo en una frase, luego indica qué puede hacer en 2-3 pasos concretos y, si corresponde, qué norma lo protege.",
+        "El estudiante describe una SITUACIÓN o CASO. Identifica qué tipo de riesgo o problema es (por ejemplo, \"esto es un caso de phishing\"), menciona en una frase los elementos que intervienen (quién engaña, qué busca, por qué medio), luego indica 2-3 medidas concretas de prevención o qué hacer y, si corresponde, qué norma lo protege.",
       definicion:
         "El estudiante pide qué es algo. Da una definición clara en 1-2 frases y, si es útil, un ejemplo breve de la vida real.",
       general:
@@ -176,7 +180,9 @@ export class ChatbotRules {
       "- Sé breve: 2 a 5 frases para preguntas simples (máximo ~120 palabras). Solo extiéndete si el estudiante lo pide.",
       "- Incluye un ejemplo de la vida real cuando ayude a entender (una o dos frases).",
       "- Texto plano: sin títulos ni negritas con asteriscos. Si enumeras pasos, usa líneas que empiecen con \"• \".",
-      "- Usa como base las FICHAS y el CONTENIDO DE LA PLATAFORMA. Si usas conocimiento general, no inventes artículos, números de ley ni fechas; si no estás seguro de un dato normativo, dilo.",
+      "- Responde ÚNICAMENTE con base en las FICHAS, el CONTEXTO DEL MÓDULO y el CONTENIDO DE LA PLATAFORMA de abajo. No inventes artículos, números de ley, fechas ni datos.",
+      `- Si esa información no alcanza para responder, dilo claramente con esta frase: "${MENSAJE_SIN_INFORMACION}" (puedes añadir una sugerencia breve de qué preguntar).`,
+      "- Si el tema es complejo, explícalo en este orden: concepto → explicación sencilla → ejemplo práctico.",
       "- Eres una herramienta de apoyo, no un sustituto de las evaluaciones: nunca indiques la respuesta correcta de una pregunta de evaluación o autoevaluación; explica el concepto para que el estudiante razone.",
       "- No des asesoría legal para un caso personal grave: orienta en términos generales y sugiere acudir a la entidad competente o a un profesional.",
       "- Si la pregunta no tiene relación con legislación informática ni con la plataforma, dilo amablemente en una frase y ofrece ayuda con un tema del curso.",
@@ -247,9 +253,9 @@ export class ChatbotRules {
     }
 
     return (
-      (pagina ? `No encontré información sobre eso en el módulo "${pagina.titulo}". ` : "No reconocí el tema de tu consulta. ") +
-      "Prueba a preguntarlo de otra forma, por ejemplo: \"¿qué es el phishing?\", \"ponme un ejemplo de delito informático\" o " +
-      "\"¿qué hago si publican mis datos sin permiso?\"."
+      `${MENSAJE_SIN_INFORMACION} ` +
+      (pagina ? `Revisa el contenido del módulo "${pagina.titulo}" o ` : "También puedes ") +
+      "preguntarlo de otra forma, por ejemplo: \"¿qué es el phishing?\" o \"¿qué hago si publican mis datos sin permiso?\"."
     );
   }
 

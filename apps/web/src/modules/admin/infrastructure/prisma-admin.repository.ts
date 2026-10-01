@@ -8,6 +8,7 @@ import {
   type ModoEliminacionModulo,
 } from "../domain/module-deletion";
 import { INFOGRAFIAS_INCLUIDAS, type DatosInfografia } from "../domain/infographic";
+import type { EvaluacionModuloConIntentos, ModuloConResultados } from "../domain/admin-repository.interface";
 
 /** "Protección de Datos" → "proteccion-de-datos" */
 function generarSlug(texto: string): string {
@@ -557,6 +558,74 @@ export class PrismaAdminRepository implements IAdminRepository {
     }
     if (vinculadas) await registrarLog(this.prisma, actorId, "EDITAR", "infografia", `Vinculadas ${vinculadas} infografías incluidas`);
     return { vinculadas };
+  }
+
+  // ---------------- Resultados de evaluaciones de módulo (solo lectura) ----------------
+  // Solo se cuentan intentos de usuarios con rol ESTUDIANTE: las pruebas que
+  // haga un administrador no alteran los resultados.
+
+  async listarModulosConResultados(): Promise<ModuloConResultados[]> {
+    const modulos = await this.prisma.course.findMany({
+      where: { eliminadoEn: null },
+      orderBy: [{ orden: "asc" }, { numero: "asc" }],
+      select: {
+        id: true,
+        numero: true,
+        titulo: true,
+        activo: true,
+        evaluations: { ...SELECT_EVAL_MODULO, select: { id: true, titulo: true } },
+      },
+    });
+    const idsEval = modulos.flatMap((m) => m.evaluations.map((e) => e.id));
+    const intentos = idsEval.length
+      ? await this.prisma.quizAttempt.findMany({
+          where: { evaluationId: { in: idsEval }, user: { rol: "ESTUDIANTE" } },
+          select: { evaluationId: true, userId: true, aprobado: true },
+        })
+      : [];
+    return modulos.map((m) => {
+      const ev = m.evaluations[0];
+      if (!ev) return { id: m.id, numero: m.numero, titulo: m.titulo, activo: m.activo, evaluacion: null };
+      const deEsta = intentos.filter((i) => i.evaluationId === ev.id);
+      const rindieron = new Set(deEsta.map((i) => i.userId));
+      const aprobados = new Set(deEsta.filter((i) => i.aprobado).map((i) => i.userId));
+      return {
+        id: m.id,
+        numero: m.numero,
+        titulo: m.titulo,
+        activo: m.activo,
+        evaluacion: { id: ev.id, titulo: ev.titulo, rindieron: rindieron.size, aprobados: aprobados.size },
+      };
+    });
+  }
+
+  async obtenerIntentosEvaluacionModulo(evaluationId: string): Promise<EvaluacionModuloConIntentos | null> {
+    const ev = await this.prisma.evaluation.findUnique({
+      where: { id: evaluationId },
+      select: {
+        id: true,
+        titulo: true,
+        tipo: true,
+        course: { select: { id: true, titulo: true, numero: true, eliminadoEn: true } },
+      },
+    });
+    if (!ev || ev.tipo !== TIPO_EVALUACION.MODULO || !ev.course || ev.course.eliminadoEn) return null;
+    const intentos = await this.prisma.quizAttempt.findMany({
+      where: { evaluationId, user: { rol: "ESTUDIANTE" } },
+      orderBy: { fecha: "asc" },
+      select: { userId: true, puntaje: true, aprobado: true, fecha: true, user: { select: { nombre: true, email: true } } },
+    });
+    return {
+      evaluacion: { id: ev.id, titulo: ev.titulo, courseId: ev.course.id, cursoTitulo: ev.course.titulo, cursoNumero: ev.course.numero },
+      intentos: intentos.map((i) => ({
+        userId: i.userId,
+        nombre: i.user.nombre,
+        email: i.user.email,
+        puntaje: i.puntaje,
+        aprobado: i.aprobado,
+        fecha: i.fecha,
+      })),
+    };
   }
 
   /** Deja los módulos vigentes numerados 1..n según su orden (sin huecos tras eliminar). */

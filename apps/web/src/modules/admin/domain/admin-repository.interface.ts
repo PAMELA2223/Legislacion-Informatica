@@ -1,4 +1,18 @@
 import type { DatosInfografia } from "./infographic";
+import type { IntentoDeEstudiante } from "./evaluation-results";
+
+export interface EvaluacionModuloConIntentos {
+  evaluacion: { id: string; titulo: string; courseId: string; cursoTitulo: string; cursoNumero: number };
+  intentos: IntentoDeEstudiante[];
+}
+
+export interface ModuloConResultados {
+  id: string;
+  numero: number;
+  titulo: string;
+  activo: boolean;
+  evaluacion: { id: string; titulo: string; rindieron: number; aprobados: number } | null;
+}
 import type { Rol } from "@prisma/client";
 import type {
   AdminCaseStudyRow,
@@ -88,6 +102,10 @@ export interface IAdminRepository {
   guardarInfografiaDeModulo(actorId: string, id: string | null, data: DatosInfografia): Promise<{ id: string }>;
   asociarInfografiaAntigua(actorId: string, infographicId: string, courseId: string): Promise<void>;
   vincularInfografiasIncluidas(actorId: string): Promise<{ vinculadas: number }>;
+
+  // Resultados de las evaluaciones de módulo (solo lectura)
+  listarModulosConResultados(): Promise<ModuloConResultados[]>;
+  obtenerIntentosEvaluacionModulo(evaluationId: string): Promise<EvaluacionModuloConIntentos | null>;
   actualizarLeccion(actorId: string, leccionId: string, data: DatosLeccion): Promise<void>;
   crearLeccion(actorId: string, courseId: string, data: DatosLeccion): Promise<void>;
   eliminarLeccion(actorId: string, leccionId: string): Promise<void>;

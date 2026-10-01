@@ -63,3 +63,63 @@ describe("ResponderConsultaUseCase", () => {
     expect(r.fuentes).toEqual([]);
   });
 });
+
+describe("ResponderConsultaUseCase — nuevas reglas", () => {
+  const sinIA: IChatLanguageModel = { disponible: false, responder: vi.fn() };
+  const vacio = (pagina: { tipo: "modulo"; titulo: string; descripcion: string; extracto: string } | null = null): IChatContextRepository => ({
+    buscarFragmentos: vi.fn(async () => []),
+    describirPagina: vi.fn(async () => pagina),
+    enunciadosDeEvaluaciones: vi.fn(async () => []),
+  });
+  const moduloDatos = { tipo: "modulo" as const, titulo: "Protección de Datos Personales", descripcion: "LOPDP, consentimiento y derechos del titular", extracto: "" };
+
+  it("'Explícame este tema de una manera sencilla' dentro de un módulo usa el tema del módulo", async () => {
+    const r = await new ResponderConsultaUseCase(vacio(moduloDatos), sinIA).execute(
+      [{ role: "user", content: "Explícame este tema de una manera sencilla" }],
+      "/modulos/proteccion-datos-personales"
+    );
+    expect(r.respuesta).toMatch(/Tus datos son tuyos/);
+    expect(r.meta).toMatchObject({ intencion: "simplificar", tema: "datos-personales", contexto: "modulo", conInformacion: true });
+  });
+
+  it("'¿Qué significa consentimiento?' en el módulo de protección de datos", async () => {
+    const r = await new ResponderConsultaUseCase(vacio(moduloDatos), sinIA).execute(
+      [{ role: "user", content: "¿Qué significa consentimiento?" }],
+      "/modulos/proteccion-datos-personales"
+    );
+    expect(r.respuesta).toMatch(/libre, específico, informado e inequívoco/);
+  });
+
+  it("sin información suficiente lo dice claramente (no inventa) y se registra como tal", async () => {
+    const r = await new ResponderConsultaUseCase(vacio(), sinIA).execute([{ role: "user", content: "¿Cuál es la capital de Australia?" }], null);
+    expect(r.respuesta).toMatch(/No encuentro información suficiente sobre ese tema dentro del contenido disponible/);
+    expect(r.meta.conInformacion).toBe(false);
+  });
+
+  it("respeta los contenidos configurados por el administrador", async () => {
+    const ctx = vacio();
+    const soloGlosario = { activo: true, fuentes: ["GLOSARIO" as const] };
+    const r = await new ResponderConsultaUseCase(ctx, sinIA, soloGlosario).execute([{ role: "user", content: "¿Qué es phishing?" }], null);
+    expect((ctx.buscarFragmentos as ReturnType<typeof vi.fn>).mock.calls[0][1]).toEqual(["GLOSARIO"]);
+    // Sin la base de conocimiento habilitada, no responde con sus fichas:
+    expect(r.respuesta).toMatch(/No encuentro información suficiente/);
+  });
+
+  it("la IA recibe la regla de no inventar y la estructura concepto → explicación → ejemplo", async () => {
+    const modelo: IChatLanguageModel = { disponible: true, responder: vi.fn(async () => "…") };
+    await new ResponderConsultaUseCase(vacio(), modelo).execute([{ role: "user", content: "¿Qué es el comercio electrónico?" }], null);
+    const sistema = (modelo.responder as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(sistema).toMatch(/Responde ÚNICAMENTE con base en/);
+    expect(sistema).toMatch(/No encuentro información suficiente/);
+    expect(sistema).toMatch(/concepto → explicación sencilla → ejemplo práctico/);
+  });
+
+  it("caso del correo del banco: identifica el riesgo y medidas de prevención", async () => {
+    const r = await new ResponderConsultaUseCase(vacio(), sinIA).execute(
+      [{ role: "user", content: "Una persona recibe un correo que aparenta ser de su banco y le solicita ingresar sus datos y contraseña mediante un enlace. ¿Qué tipo de situación es?" }],
+      null
+    );
+    expect(r.respuesta.toLowerCase()).toContain("phishing");
+    expect(r.respuesta).toMatch(/Qué puedes hacer/);
+  });
+});

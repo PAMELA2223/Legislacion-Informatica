@@ -14,6 +14,12 @@ export interface Concepto {
   id: string;
   nombre: string;
   senales: string[];
+  /**
+   * Pistas combinadas: se reconoce el concepto si el texto contiene al menos
+   * una palabra de CADA grupo (p. ej. canal + dato sensible + enlace), aunque
+   * no use ninguna frase exacta de `senales`.
+   */
+  combinaciones?: string[][];
   definicion: string;
   sencillo: string;
   ejemplo: string;
@@ -30,6 +36,12 @@ export const CONCEPTOS: Concepto[] = [
       "ingresar mi contrasena", "ingrese mi contrasena", "ingresa tu contrasena", "pidiendo mi contrasena", "piden mi contrasena",
       "bloquear mi cuenta", "bloqueen mi cuenta", "bloquearan tu cuenta", "suspender mi cuenta", "verificar mi cuenta",
       "haciendose pasar por el banco", "se hacen pasar por", "pagina falsa", "sitio falso", "smishing", "vishing",
+      "aparenta ser de su banco", "aparenta ser de mi banco", "parece ser de mi banco",
+    ],
+    combinaciones: [
+      ["correo", "correos", "mensaje", "mensajes", "sms", "whatsapp", "llamada", "email", "mail"],
+      ["contrasena", "contrasenas", "clave", "claves", "datos", "tarjeta", "pin", "usuario"],
+      ["enlace", "link", "banco", "pagina", "sitio", "formulario"],
     ],
     definicion:
       "El phishing es un engaño en el que alguien se hace pasar por una entidad confiable (un banco, una red social, una institución) para que la víctima entregue contraseñas, datos bancarios u otra información personal.",

@@ -95,7 +95,7 @@ describe("ChatbotRules — modo básico (sin IA) responde según lo que se pide"
   it("tema no reconocido: usa el contenido de la plataforma o guía al estudiante", () => {
     const f = [{ tipo: "GLOSARIO" as const, titulo: "Criptografía", texto: "Técnica para proteger información. Otra frase. Tercera.", url: "/glosario" }];
     expect(ChatbotRules.respuestaModoBasico(consulta("criptografía"), f)).toMatch(/Según el glosario/);
-    expect(ChatbotRules.respuestaModoBasico(consulta("hola"), [])).toMatch(/Prueba a preguntarlo/);
+    expect(ChatbotRules.respuestaModoBasico(consulta("hola"), [])).toMatch(/No encuentro información suficiente/);
   });
 
   it("sugiere seguimientos útiles", () => {

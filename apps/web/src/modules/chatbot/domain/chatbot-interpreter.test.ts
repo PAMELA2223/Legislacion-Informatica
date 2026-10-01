@@ -84,3 +84,48 @@ describe("coincidencia con preguntas de evaluación", () => {
     expect(coincidenciaConPregunta("¿Qué es un sistema informático?", pregunta)).toBeLessThan(UMBRAL_COINCIDENCIA_EVALUACION);
   });
 });
+
+describe("interpretación — frases del nuevo documento", () => {
+  it("'de una manera sencilla' es un pedido de explicación sencilla", () => {
+    expect(interpretarConsulta([u("Explícame este tema de una manera sencilla")]).intencion).toBe("simplificar");
+    expect(interpretarConsulta([u("¿Me lo explicas de forma más simple?")]).intencion).toBe("simplificar");
+  });
+  it("caso narrado en tercera persona: correo que aparenta ser del banco → phishing (situación)", () => {
+    const r = interpretarConsulta([
+      u("Una persona recibe un correo que aparenta ser de su banco y le solicita ingresar sus datos y contraseña mediante un enlace."),
+    ]);
+    expect(r.intencion).toBe("situacion");
+    expect(r.conceptos[0].id).toBe("phishing");
+  });
+  it("pistas combinadas sin frases exactas: SMS + clave + link → phishing", () => {
+    expect(ids([u("Me mandaron un SMS con un link para actualizar mi clave")])[0]).toBe("phishing");
+  });
+  it("las pistas combinadas no se activan con solo una o dos pistas", () => {
+    expect(ids([u("¿Cómo creo una contraseña segura para mi correo?")])).not.toContain("phishing");
+  });
+  it("otras preguntas del documento", () => {
+    expect(ids([u("¿Qué es el comercio electrónico?")])[0]).toBe("comercio-electronico");
+    expect(ids([u("¿Qué protege la propiedad intelectual?")])[0]).toBe("propiedad-intelectual");
+    const ej = interpretarConsulta([u("¿Cuál sería un ejemplo de una situación relacionada con la protección de datos?")]);
+    expect(ej.intencion).toBe("ejemplo");
+    expect(ej.conceptos[0].id).toBe("datos-personales");
+    const seg = interpretarConsulta([u("¿Qué es un delito informático?"), a("Un delito informático es…"), u("¿Y cuál sería un ejemplo?")]);
+    expect(seg.intencion).toBe("ejemplo");
+    expect(seg.conceptos[0].id).toBe("delito-informatico");
+  });
+});
+
+describe("seguimiento: el tema sale de lo que preguntó el estudiante", () => {
+  it("no se desvía por conceptos mencionados en la respuesta del asistente", () => {
+    const r = interpretarConsulta([
+      u("¿Qué es un delito informático?"),
+      a("Un delito informático es una conducta sancionada… Por ejemplo: entrar sin permiso a la cuenta de otra persona. Acceso no consentido (COIP, art. 234)."),
+      u("¿Y cuál sería un ejemplo?"),
+    ]);
+    expect(r.conceptos[0].id).toBe("delito-informatico");
+  });
+  it("si el estudiante nunca nombró un tema, usa el de la respuesta anterior", () => {
+    const r = interpretarConsulta([u("hola"), a("Puedo explicarte qué es el phishing."), u("dame un ejemplo")]);
+    expect(r.conceptos[0].id).toBe("phishing");
+  });
+});

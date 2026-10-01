@@ -203,3 +203,47 @@ M	apps/web/src/modules/learning-path/domain/learning-path.entity.ts
 M	apps/web/src/modules/learning-path/infrastructure/prisma-learning-path.repository.ts
 M	apps/web/src/modules/learning-path/presentation/results-comparison.tsx
 M	docs/flujo-aprendizaje-y-administracion.md
+
+=== NUEVO: resultados de evaluaciones por módulo para el administrador (solo consulta) ===
+M	README.md
+M	apps/web/src/app/(dashboard)/admin/cursos/[id]/page.tsx
+M	apps/web/src/app/(dashboard)/admin/evaluaciones/page.tsx
+A	apps/web/src/app/(dashboard)/admin/evaluaciones/resultados/page.tsx
+A	apps/web/src/app/api/admin/evaluaciones/[id]/resultados/route.ts
+A	apps/web/src/lib/fechas.test.ts
+A	apps/web/src/lib/fechas.ts
+M	apps/web/src/modules/admin/application/admin.use-cases.ts
+M	apps/web/src/modules/admin/domain/admin-repository.interface.ts
+A	apps/web/src/modules/admin/domain/evaluation-results.test.ts
+A	apps/web/src/modules/admin/domain/evaluation-results.ts
+M	apps/web/src/modules/admin/infrastructure/prisma-admin.repository.ts
+M	apps/web/src/modules/admin/presentation/evaluation-admin-detail.tsx
+A	apps/web/src/modules/admin/presentation/evaluation-results-view.tsx
+A	apps/web/src/modules/admin/presentation/module-results-select.tsx
+A	docs/img/resultados-evaluaciones/celular.png
+A	docs/img/resultados-evaluaciones/escritorio.png
+A	docs/resultados-evaluaciones.md
+
+=== CHATBOT: bolita flotante, configuración y estadísticas para el administrador ===
+M	README.md
+M	apps/web/prisma/schema.prisma
+M	apps/web/src/app/(dashboard)/admin/chatbot/page.tsx
+M	apps/web/src/app/(dashboard)/layout.tsx
+A	apps/web/src/app/api/admin/chatbot/route.ts
+M	apps/web/src/app/api/chatbot/route.ts
+A	apps/web/src/modules/admin/presentation/chatbot-config-form.tsx
+M	apps/web/src/modules/chatbot/application/chatbot.use-cases.test.ts
+M	apps/web/src/modules/chatbot/application/chatbot.use-cases.ts
+A	apps/web/src/modules/chatbot/domain/chatbot-config.test.ts
+A	apps/web/src/modules/chatbot/domain/chatbot-config.ts
+M	apps/web/src/modules/chatbot/domain/chatbot-interpreter.test.ts
+M	apps/web/src/modules/chatbot/domain/chatbot-interpreter.ts
+M	apps/web/src/modules/chatbot/domain/chatbot-knowledge.ts
+M	apps/web/src/modules/chatbot/domain/chatbot-ports.interface.ts
+M	apps/web/src/modules/chatbot/domain/chatbot.entity.test.ts
+M	apps/web/src/modules/chatbot/domain/chatbot.entity.ts
+M	apps/web/src/modules/chatbot/infrastructure/prisma-chat-context.repository.ts
+A	apps/web/src/modules/chatbot/infrastructure/prisma-chatbot-config.repository.ts
+M	apps/web/src/modules/chatbot/presentation/chatbot-widget.tsx
+A	docs/chatbot.md
+A	docs/img/chatbot/ventana-escritorio-celular.png

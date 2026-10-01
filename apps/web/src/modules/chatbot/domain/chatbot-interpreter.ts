@@ -23,6 +23,8 @@ export interface ConsultaInterpretada {
   conceptos: Concepto[]; // máx. 2, el más relevante primero
   /** El tema viene de mensajes anteriores (pregunta de seguimiento). */
   temaDelHistorial: boolean;
+  /** El tema se tomó del módulo que el estudiante está estudiando ("explícame este tema"). */
+  temaDelModulo?: boolean;
 }
 
 /** minúsculas, sin tildes, espacios simples: "¿Qué es PHISHING?" → "que es phishing" */
@@ -45,11 +47,11 @@ const PATRONES: [Exclude<Intencion, "definicion" | "general">, RegExp][] = [
   ["ejemplo", /\bejemplo(s)?\b|\bcaso (real|practico|concreto)\b|\bun caso\b|\bponme un\b|\bdame un caso\b/],
   [
     "simplificar",
-    /\bmas (facil|sencill\w*|simple|claro)\b|\bno (lo )?entiendo\b|\bno (lo )?entendi\b|\bpalabras (simples|sencillas)\b|\bcomo (a|para) un nino\b|\bsimplifica\b|\bresumido\b/,
+    /\bmas (facil|sencill\w*|simple|claro)\b|\b(manera|forma) (mas )?(sencilla|simple|facil|clara)\b|\bsencillamente\b|\bno (lo )?entiendo\b|\bno (lo )?entendi\b|\bpalabras (simples|sencillas)\b|\bcomo (a|para) un nino\b|\bsimplifica\b|\bresumido\b/,
   ],
   [
     "situacion",
-    /\bme (llego|paso|hackearon|robaron|estafaron|escribieron|enviaron|pidieron|piden|amenazan|acosan|suplantaron|publicaron|insultan)\b|\bque (hago|puedo hacer|debo hacer|deberia hacer|hacer si)\b|\balguien (publico|uso|subio|comparte|compartio|me|esta|creo|entro)\b|\bsi alguien\b|\bmi cuenta\b|\brecibi\b|\bque tipo de situacion\b|\bque puedo hacer\b|\ba donde (acudo|denuncio)\b|\bcomo denuncio\b/,
+    /\bme (llego|paso|hackearon|robaron|estafaron|escribieron|enviaron|pidieron|piden|amenazan|acosan|suplantaron|publicaron|insultan)\b|\bque (hago|puedo hacer|debo hacer|deberia hacer|hacer si)\b|\balguien (publico|uso|subio|comparte|compartio|me|esta|creo|entro)\b|\bsi alguien\b|\bmi cuenta\b|\brecibi\b|\bque tipo de (situacion|riesgo|caso|delito|problema)\b|\bque riesgo\b|\buna persona (recibe|recibio|publica|publico|usa|uso|compra|compro|descarga|descargo)\b|\bcaso\b.{0,40}\b(que|cual)\b|\bque puedo hacer\b|\ba donde (acudo|denuncio)\b|\bcomo denuncio\b/,
   ],
 ];
 
@@ -67,6 +69,10 @@ export function detectarConceptos(textoNormalizado: string, max = 2): Concepto[]
       if (new RegExp(`(^|\\s)${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`).test(textoNormalizado)) {
         puntos = Math.max(puntos, s.length); // la coincidencia más específica pesa más
       }
+    }
+    // Pistas combinadas (una palabra de cada grupo), con peso moderado.
+    if (puntos === 0 && c.combinaciones?.every((grupo) => grupo.some((p) => new RegExp(`(^|\\s)${p}(\\s|$)`).test(textoNormalizado)))) {
+      puntos = 12;
     }
     if (puntos > 0) puntuados.push({ c, puntos });
   }
@@ -86,19 +92,24 @@ export function interpretarConsulta(historial: MensajeChat[]): ConsultaInterpret
   let conceptos = detectarConceptos(texto);
   let temaDelHistorial = false;
 
-  // Seguimiento: completar con el tema de los mensajes anteriores del estudiante
-  // (y de las respuestas del asistente, que nombran el concepto).
+  // Seguimiento: completar con el tema de la conversación. Primero las
+  // preguntas anteriores del ESTUDIANTE (lo que él preguntó) y solo después
+  // las respuestas del asistente: una respuesta puede mencionar otros
+  // conceptos en sus ejemplos y desviar el tema.
   const faltaSegundoParaComparar = intencionDetectada === "diferencia" && conceptos.length === 1;
   if ((conceptos.length === 0 || faltaSegundoParaComparar) && esSeguimiento(texto, intencionDetectada)) {
-    for (let i = historial.length - 2; i >= 0 && conceptos.length < 2; i--) {
-      for (const c of detectarConceptos(normalizar(historial[i].content))) {
+    const necesarios = intencionDetectada === "diferencia" ? 2 : 1;
+    const anteriores = historial.slice(0, -1).reverse();
+    const enOrden = [...anteriores.filter((m) => m.role === "user"), ...anteriores.filter((m) => m.role === "assistant")];
+    for (const m of enOrden) {
+      for (const c of detectarConceptos(normalizar(m.content))) {
+        if (conceptos.length >= necesarios) break;
         if (!conceptos.some((x) => x.id === c.id)) {
           conceptos = [...conceptos, c];
           temaDelHistorial = true;
         }
-        if (conceptos.length >= (intencionDetectada === "diferencia" ? 2 : 1)) break;
       }
-      if (conceptos.length >= (intencionDetectada === "diferencia" ? 2 : 1)) break;
+      if (conceptos.length >= necesarios) break;
     }
   }
 
@@ -123,3 +134,23 @@ export function coincidenciaConPregunta(mensaje: string, preguntaEvaluacion: str
 }
 
 export const UMBRAL_COINCIDENCIA_EVALUACION = 0.7;
+
+/**
+ * Si la consulta no nombra un tema ("explícame este tema de forma sencilla",
+ * "dame un ejemplo") y el estudiante está dentro de un módulo, se usa el tema
+ * de ese módulo.
+ */
+export function completarConTemaDelModulo(
+  consulta: ConsultaInterpretada,
+  modulo: { titulo: string; descripcion: string } | null
+): ConsultaInterpretada {
+  if (consulta.conceptos.length > 0 || !modulo || consulta.intencion === "respuesta-evaluacion") return consulta;
+  const conceptos = detectarConceptos(normalizar(`${modulo.titulo} ${modulo.descripcion}`), 1);
+  if (conceptos.length === 0) return consulta;
+  return {
+    ...consulta,
+    conceptos,
+    temaDelModulo: true,
+    intencion: consulta.intencion === "general" ? "definicion" : consulta.intencion,
+  };
+}

@@ -45,6 +45,7 @@ model User {
   logs             AuditLog[]
 
   @@map("users")
+  chatbotConsultas ChatbotConsulta[]
 }
 
 // ============================================================
@@ -233,6 +234,41 @@ model Infographic {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("infographics")
+}
+
+// ============================================================
+// CHATBOT: configuración y estadísticas de uso
+// ============================================================
+// Configuración única (id = "global") editable desde /admin/chatbot.
+
+model ChatbotConfig {
+  id        String   @id @default("global")
+  activo    Boolean  @default(true)
+  // Contenidos que el asistente puede usar:
+  // CONOCIMIENTO (base curada), LECCIONES, GLOSARIO, FAQ, BIBLIOTECA, CASOS
+  fuentes   String[] @default(["CONOCIMIENTO", "LECCIONES", "GLOSARIO", "FAQ", "BIBLIOTECA", "CASOS"])
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("chatbot_config")
+}
+
+// Una fila por consulta, para estadísticas básicas. Por privacidad NO se
+// guarda el texto de la pregunta ni de la respuesta: solo el tipo de
+// consulta, el tema reconocido y si se encontró información.
+model ChatbotConsulta {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  fecha          DateTime @default(now())
+  modo           String // "ia" | "basico"
+  intencion      String // definicion | ejemplo | simplificar | diferencia | situacion | respuesta-evaluacion | general
+  tema           String? // id del concepto reconocido (ej. "phishing")
+  conInformacion Boolean  @default(true) @map("con_informacion")
+  contexto       String? // "modulo" | "evaluacion" | null
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([fecha])
+  @@map("chatbot_consultas")
 }
 
 // ============================================================
