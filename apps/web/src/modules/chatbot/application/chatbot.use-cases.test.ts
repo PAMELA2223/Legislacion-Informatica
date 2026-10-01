@@ -91,9 +91,14 @@ describe("ResponderConsultaUseCase — nuevas reglas", () => {
   });
 
   it("sin información suficiente lo dice claramente (no inventa) y se registra como tal", async () => {
-    const r = await new ResponderConsultaUseCase(vacio(), sinIA).execute([{ role: "user", content: "¿Cuál es la capital de Australia?" }], null);
+    const r = await new ResponderConsultaUseCase(vacio(), sinIA).execute([{ role: "user", content: "¿Qué establece la ley sobre los drones?" }], null);
     expect(r.respuesta).toMatch(/No encuentro información suficiente sobre ese tema dentro del contenido disponible/);
     expect(r.meta.conInformacion).toBe(false);
+  });
+
+  it("una pregunta fuera de tema se redirige a la función educativa", async () => {
+    const r = await new ResponderConsultaUseCase(vacio(), sinIA).execute([{ role: "user", content: "¿Cuál es la capital de Australia?" }], null);
+    expect(r.respuesta).toMatch(/^Puedo ayudarte principalmente con temas de legislación informática/);
   });
 
   it("respeta los contenidos configurados por el administrador", async () => {

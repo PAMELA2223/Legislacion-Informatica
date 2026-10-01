@@ -43,6 +43,9 @@ export function ChatbotWidget({ usuarioId }: { usuarioId: string }) {
   const finRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bolitaRef = useRef<HTMLButtonElement>(null);
+  // Identifica la conversación vigente: si el estudiante inicia una nueva
+  // mientras llega una respuesta, esa respuesta se descarta (no se mezcla).
+  const generacion = useRef(0);
 
   // Recuperar la conversación de esta sesión (tras montar, para no desajustar el render del servidor).
   useEffect(() => {
@@ -79,7 +82,9 @@ export function ChatbotWidget({ usuarioId }: { usuarioId: string }) {
 
   async function enviar(contenido: string) {
     const consulta = contenido.trim();
+    // Mensaje vacío: no se consulta a la IA ni se genera respuesta.
     if (!consulta || enviando) return;
+    const miGeneracion = generacion.current;
     const historial: Mensaje[] = [...mensajes, { role: "user", content: consulta }];
     setMensajes(historial);
     setTexto("");
@@ -95,6 +100,7 @@ export function ChatbotWidget({ usuarioId }: { usuarioId: string }) {
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (miGeneracion !== generacion.current) return; // conversación reiniciada: se descarta
       setMensajes((m) => [
         ...m,
         res.ok
@@ -102,9 +108,10 @@ export function ChatbotWidget({ usuarioId }: { usuarioId: string }) {
           : { role: "assistant", content: data.error || "No pude responder en este momento. Inténtalo de nuevo." },
       ]);
     } catch {
+      if (miGeneracion !== generacion.current) return;
       setMensajes((m) => [...m, { role: "assistant", content: "No pude conectarme. Revisa tu conexión e inténtalo de nuevo." }]);
     } finally {
-      setEnviando(false);
+      if (miGeneracion === generacion.current) setEnviando(false);
     }
   }
 
@@ -136,7 +143,11 @@ export function ChatbotWidget({ usuarioId }: { usuarioId: string }) {
             <div className="flex items-center gap-1 shrink-0">
               {mensajes.length > 0 && (
                 <button
-                  onClick={() => setMensajes([])}
+                  onClick={() => {
+                    generacion.current++;
+                    setMensajes([]);
+                    setEnviando(false);
+                  }}
                   aria-label="Nueva conversación"
                   title="Nueva conversación"
                   className="rounded-lg p-1.5 hover:bg-white/10"
@@ -190,10 +201,13 @@ export function ChatbotWidget({ usuarioId }: { usuarioId: string }) {
               </Burbuja>
             ))}
 
+            {/* Indicador de escritura: ocupa el lugar de la respuesta hasta que llega */}
             {enviando && (
-              <p className="text-xs text-muted-foreground" role="status">
-                Chatbot está escribiendo…
-              </p>
+              <div role="status" aria-label="Chatbot está escribiendo">
+                <Burbuja autor="Chatbot" propio={false}>
+                  <span className="text-muted-foreground animate-pulse motion-reduce:animate-none">Escribiendo…</span>
+                </Burbuja>
+              </div>
             )}
 
             {!enviando && ultimo?.role === "assistant" && (ultimo.sugerencias?.length ?? 0) > 0 && (

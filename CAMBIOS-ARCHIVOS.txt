@@ -256,3 +256,15 @@ A	apps/web/src/modules/chatbot/infrastructure/gemini-chat.model.test.ts
 A	apps/web/src/modules/chatbot/infrastructure/gemini-chat.model.ts
 A	apps/web/src/modules/chatbot/infrastructure/language-model.factory.ts
 M	docs/chatbot.md
+
+=== CHATBOT: corrección de la mensajería (saludos, contexto, fuera de tema) ===
+M	apps/web/src/app/(dashboard)/admin/chatbot/page.tsx
+A	apps/web/src/modules/chatbot/application/chatbot-mensajeria.test.ts
+M	apps/web/src/modules/chatbot/application/chatbot.use-cases.test.ts
+M	apps/web/src/modules/chatbot/application/chatbot.use-cases.ts
+M	apps/web/src/modules/chatbot/domain/chatbot-interpreter.test.ts
+M	apps/web/src/modules/chatbot/domain/chatbot-interpreter.ts
+M	apps/web/src/modules/chatbot/domain/chatbot.entity.test.ts
+M	apps/web/src/modules/chatbot/domain/chatbot.entity.ts
+M	apps/web/src/modules/chatbot/presentation/chatbot-widget.tsx
+M	docs/chatbot.md

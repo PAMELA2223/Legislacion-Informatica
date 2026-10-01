@@ -90,3 +90,31 @@ Si la migración todavía no se aplicó, el chatbot funciona igual con la config
   - un seguimiento que tomaba el tema de la respuesta del asistente en lugar de la pregunta del estudiante;
   - la frase "de una manera sencilla", que no se reconocía como pedido de explicación sencilla;
   - el caso narrado en tercera persona, que no se identificaba como phishing.
+
+## Corrección de la mensajería (saludos y contexto)
+
+**Problema.** Al escribir "hola", el chatbot respondía sobre "Seguridad de contraseñas y autenticación".
+
+**Causa.**
+1. "hola" no se reconocía como saludo.
+2. Como un mensaje tan corto aporta pocas palabras para buscar, el chatbot completaba la búsqueda con las palabras de la **pregunta anterior** ("contraseña", "segura").
+3. Mostraba el primer resultado sin verificar que tuviera relación con el mensaje actual.
+
+No se trataba de que el contenido del módulo se enviara como si fuera la pregunta: la pregunta siempre se envía como mensaje del estudiante, y el módulo, en las instrucciones.
+
+**Corrección** (solo lógica; el diseño no cambió):
+
+| # | Comportamiento ahora |
+|---|---|
+| 1 | Primero se analiza el mensaje actual. Saludos ("hola", "buenos días", "¿cómo estás?"), "¿qué puedes hacer?" y agradecimientos o despedidas se responden con naturalidad, **sin buscar contenido ni consultar a la IA**. "Hola, ¿qué es el phishing?" se trata como pregunta. |
+| 2 | Las preguntas de legislación informática se responden según el tema identificado. |
+| 3 | La conversación anterior solo se usa en preguntas de seguimiento ("¿y cuál es un ejemplo?"). Un "hola" posterior es un saludo nuevo. |
+| 4 | Solo se muestra contenido de la plataforma, como respuesta o como enlace, si se relaciona con el mensaje actual. El módulo es **contexto secundario**: se usa si la pregunta trata de su tema o se refiere a él ("este tema"). |
+| 5 | Las preguntas fuera de tema ("¿cuál es el clima de hoy?") reciben una respuesta breve que redirige a los temas de la plataforma. Una pregunta del ámbito sin información recibe "No encuentro información suficiente…". |
+| 6 | Un mensaje vacío no se envía, y el servidor tampoco lo procesaría. |
+| 7 | "Escribiendo…" aparece como mensaje del Chatbot y se reemplaza por la respuesta. |
+| 8 | El historial alterna Estudiante → Chatbot. Si se inicia una nueva conversación mientras llega una respuesta, esa respuesta se descarta. |
+
+**Con IA (Gemini o Claude):** las instrucciones piden responder siempre al último mensaje y marcan el módulo como contexto secundario, que no debe mencionarse si el estudiante pregunta otra cosa.
+
+**Verificación:** 159 pruebas unitarias, incluida la reproducción exacta de la captura, y 13/13 verificaciones en el navegador.

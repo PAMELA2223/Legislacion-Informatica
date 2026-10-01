@@ -70,7 +70,7 @@ describe("interpretación de consultas (ejemplos del documento)", () => {
   it("no confunde la palabra suelta con otro concepto (tildes y mayúsculas)", () => {
     expect(normalizar("¿Qué es el PHISHING?")).toBe("que es el phishing");
     expect(ids([u("¿Qué es la firma electrónica?")])[0]).toBe("firma-electronica");
-    expect(interpretarConsulta([u("hola")]).intencion).toBe("general");
+    expect(interpretarConsulta([u("hola")]).intencion).toBe("saludo");
   });
 });
 

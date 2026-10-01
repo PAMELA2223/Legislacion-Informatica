@@ -1,5 +1,5 @@
 import { CONCEPTOS, COMPARACIONES, comparacion } from "./chatbot-knowledge";
-import type { ConsultaInterpretada, Intencion } from "./chatbot-interpreter";
+import { esDelDominio, normalizar, type ConsultaInterpretada, type Intencion } from "./chatbot-interpreter";
 
 // Capa de DOMINIO del chatbot educativo sobre legislación informática.
 // Aquí viven las reglas puras (sin red ni base de datos): qué mensajes se
@@ -41,6 +41,10 @@ export interface RespuestaChat {
 /** Respuesta cuando el contenido disponible no alcanza (el asistente no inventa). */
 export const MENSAJE_SIN_INFORMACION =
   "No encuentro información suficiente sobre ese tema dentro del contenido disponible. Puedes consultar el material del módulo correspondiente.";
+
+/** Respuesta a una pregunta que no tiene relación con legislación informática. */
+export const MENSAJE_FUERA_DE_TEMA =
+  "Puedo ayudarte principalmente con temas de legislación informática, como delitos informáticos, protección de datos, privacidad, estafas digitales, comercio electrónico y propiedad intelectual. ¿Sobre cuál de estos temas tienes una duda?";
 
 export const LIMITES_CHAT = {
   maxCaracteresMensaje: 1500,
@@ -111,11 +115,16 @@ export class ChatbotRules {
     const ultimo = historial[historial.length - 1]?.content ?? "";
     const terminos = [...this.extraerTerminos(ultimo)];
     for (const c of consulta.conceptos) terminos.push(...this.extraerTerminos(c.nombre));
-    if (terminos.length < 2) {
+    // La conversación anterior solo se usa en preguntas de SEGUIMIENTO
+    // ("¿y un ejemplo?"). Antes se usaba con cualquier mensaje corto, y así un
+    // "hola" terminaba buscando el tema de la pregunta anterior.
+    if (consulta.esSeguimiento && consulta.temaDelHistorial === false && consulta.conceptos.length === 0) {
       const anterior = [...historial].reverse().find((m, i) => i > 0 && m.role === "user");
       if (anterior) terminos.push(...this.extraerTerminos(anterior.content));
-      if (pagina) terminos.push(...this.extraerTerminos(pagina.titulo));
     }
+    // El módulo actual es contexto secundario: solo se busca por su título si
+    // la consulta tomó explícitamente su tema ("explícame este tema").
+    if (consulta.temaDelModulo && pagina) terminos.push(...this.extraerTerminos(pagina.titulo));
     return Array.from(new Set(terminos)).slice(0, 10);
   }
 
@@ -148,6 +157,9 @@ export class ChatbotRules {
         : fragmentos.map((f, i) => `[${i + 1}] ${f.tipo} — ${f.titulo}\n${f.texto}`).join("\n\n");
 
     const INSTRUCCION_INTENCION: Record<Intencion, string> = {
+      saludo: "El estudiante saluda. Responde al saludo en una frase y pregúntale sobre qué tema tiene dudas. No expliques ningún tema.",
+      capacidades: "El estudiante pregunta qué puedes hacer. Explícalo en 2 frases, sin desarrollar ningún tema.",
+      cortesia: "El estudiante agradece o se despide. Responde con una frase breve y cordial.",
       "respuesta-evaluacion":
         "El estudiante pide la respuesta de una evaluación. NO la des (ni la letra, ni la opción, ni \"verdadero/falso\"). Dile amablemente que no puedes resolver evaluaciones y explica en 2-3 frases el concepto que necesita para razonarla por sí mismo.",
       diferencia:
@@ -167,7 +179,7 @@ export class ChatbotRules {
     const paginaTexto = pagina
       ? pagina.tipo === "evaluacion"
         ? `\nCONTEXTO: el estudiante está RESOLVIENDO la evaluación del módulo "${pagina.titulo}". Extrema el cuidado de no dar respuestas.`
-        : `\nCONTEXTO DEL MÓDULO ACTUAL: el estudiante está estudiando el módulo "${pagina.titulo}" (${pagina.descripcion}). Si la pregunta es vaga ("este derecho", "este tema", "esto"), interprétala según este módulo.` +
+        : `\nCONTEXTO SECUNDARIO — MÓDULO ACTUAL: el estudiante está en el módulo "${pagina.titulo}" (${pagina.descripcion}). Úsalo SOLO si la pregunta trata de ese tema o es vaga ("este derecho", "este tema", "esto"). Si pregunta otra cosa, no lo menciones.` +
           (pagina.extracto ? `\nExtracto del módulo:\n${pagina.extracto}` : "")
       : "";
 
@@ -185,7 +197,8 @@ export class ChatbotRules {
       "- Si el tema es complejo, explícalo en este orden: concepto → explicación sencilla → ejemplo práctico.",
       "- Eres una herramienta de apoyo, no un sustituto de las evaluaciones: nunca indiques la respuesta correcta de una pregunta de evaluación o autoevaluación; explica el concepto para que el estudiante razone.",
       "- No des asesoría legal para un caso personal grave: orienta en términos generales y sugiere acudir a la entidad competente o a un profesional.",
-      "- Si la pregunta no tiene relación con legislación informática ni con la plataforma, dilo amablemente en una frase y ofrece ayuda con un tema del curso.",
+      `- Si la pregunta no tiene relación con legislación informática ni con la plataforma, responde con esta frase: "${MENSAJE_FUERA_DE_TEMA}"`,
+      "- Responde SIEMPRE al ÚLTIMO mensaje del estudiante. Los mensajes anteriores solo sirven para entender referencias como \"eso\" o \"¿y un ejemplo?\"; si el último mensaje cambia de tema, responde al tema nuevo y no continúes el anterior.",
       "",
       `QUÉ PIDE AHORA EL ESTUDIANTE: ${INSTRUCCION_INTENCION[consulta.intencion]}`,
       coincideConEvaluacion
@@ -195,7 +208,7 @@ export class ChatbotRules {
       fichas ? `\nFICHAS DE CONCEPTOS (verificadas):\n${fichas}` : "",
       comp ? `\nDIFERENCIA CLAVE (verificada): ${comp}` : "",
       "",
-      "CONTENIDO DE LA PLATAFORMA:",
+      "CONTENIDO DE LA PLATAFORMA (posiblemente relacionado; úsalo solo si responde a la pregunta actual):",
       contenido,
     ]
       .filter((l) => l !== "")
@@ -208,7 +221,14 @@ export class ChatbotRules {
    * indirectas) y la base de conocimiento curada; solo si no reconoce el tema
    * recurre a los fragmentos de la plataforma.
    */
-  static respuestaModoBasico(consulta: ConsultaInterpretada, fragmentos: FragmentoContexto[], pagina: ContextoPagina | null = null): string {
+  static respuestaModoBasico(
+    consulta: ConsultaInterpretada,
+    fragmentos: FragmentoContexto[],
+    pagina: ContextoPagina | null = null,
+    mensajeActual = ""
+  ): string {
+    const social = this.respuestaSocial(consulta, mensajeActual);
+    if (social) return social;
     const [c1, c2] = consulta.conceptos;
 
     if (consulta.intencion === "respuesta-evaluacion") {
@@ -246,11 +266,16 @@ export class ChatbotRules {
       }
     }
 
-    if (fragmentos.length > 0) {
-      const f = fragmentos[0];
+    // Solo se usa un fragmento si se relaciona con el MENSAJE ACTUAL (no con
+    // la conversación anterior ni con el módulo por defecto).
+    const f = this.fragmentoRelacionado(fragmentos, mensajeActual);
+    if (f) {
       const breve = f.texto.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ");
       return `Según ${f.tipo === "GLOSARIO" ? "el glosario" : "el contenido de la plataforma"} (${f.titulo}): ${breve}`;
     }
+
+    // Nada relacionado: ¿es un tema de la plataforma sin información, o algo fuera de tema?
+    if (mensajeActual && !esDelDominio(normalizar(mensajeActual))) return MENSAJE_FUERA_DE_TEMA;
 
     return (
       `${MENSAJE_SIN_INFORMACION} ` +
@@ -272,8 +297,44 @@ export class ChatbotRules {
     );
   }
 
+  /** Respuestas a saludos, "¿qué puedes hacer?" y cortesías (sin IA ni búsqueda). */
+  static respuestaSocial(consulta: ConsultaInterpretada, mensaje = ""): string | null {
+    const t = normalizar(mensaje);
+    switch (consulta.intencion) {
+      case "saludo": {
+        const comoEstas = /\bcomo (estas|esta|te va|andas)\b|\bque tal\b/.test(t);
+        return (
+          (comoEstas ? "¡Muy bien, gracias por preguntar! 👋 " : "¡Hola! 👋 ") +
+          "Soy tu asistente de legislación informática. Estoy aquí para ayudarte a comprender los temas de la plataforma. ¿Sobre qué tema tienes alguna duda?"
+        );
+      }
+      case "capacidades":
+        return (
+          "Puedo ayudarte a comprender los temas de legislación informática: explicarte un concepto (por ejemplo, qué es un delito informático), " +
+          "darte ejemplos, explicarlo de forma más sencilla, comparar conceptos o analizar una situación, como un correo sospechoso. " +
+          "No resuelvo las evaluaciones, pero sí te ayudo a entender los temas. ¿Por dónde quieres empezar?"
+        );
+      case "cortesia":
+        return /\bgracias\b/.test(t)
+          ? "¡De nada! 😊 Si tienes otra duda sobre legislación informática, aquí estoy."
+          : "¡Hasta pronto! 👋 Cuando quieras, vuelve a preguntarme.";
+      default:
+        return null;
+    }
+  }
+
+  /** El primer fragmento que contiene alguna palabra significativa del mensaje actual. */
+  static fragmentoRelacionado(fragmentos: FragmentoContexto[], mensaje: string): FragmentoContexto | null {
+    const raices = this.extraerTerminos(mensaje).map((t) => normalizar(t).slice(0, 5)).filter((r) => r.length >= 4);
+    if (raices.length === 0) return null;
+    return fragmentos.find((f) => raices.some((r) => normalizar(`${f.titulo} ${f.texto}`).includes(r))) ?? null;
+  }
+
   /** Botones de seguimiento según lo que se acaba de responder. */
   static sugerencias(consulta: ConsultaInterpretada): string[] {
+    if (consulta.intencion === "saludo" || consulta.intencion === "capacidades") {
+      return ["¿Qué es un delito informático?", "¿Qué es la protección de datos?", "¿Qué es una estafa digital?"];
+    }
     if (consulta.intencion === "respuesta-evaluacion" || consulta.conceptos.length === 0) return [];
     const s: string[] = [];
     if (consulta.intencion !== "ejemplo") s.push("Ponme un ejemplo");

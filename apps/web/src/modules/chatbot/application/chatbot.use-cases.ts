@@ -1,8 +1,9 @@
-import { ChatbotRules, type RespuestaChat } from "../domain/chatbot.entity";
+import { ChatbotRules, MENSAJE_FUERA_DE_TEMA, type RespuestaChat } from "../domain/chatbot.entity";
 import {
   coincidenciaConPregunta,
   completarConTemaDelModulo,
   interpretarConsulta,
+  INTENCIONES_SOCIALES,
   UMBRAL_COINCIDENCIA_EVALUACION,
 } from "../domain/chatbot-interpreter";
 import { CONFIG_POR_DEFECTO, type ConfigChatbot } from "../domain/chatbot-config";
@@ -30,6 +31,21 @@ export class ResponderConsultaUseCase {
     const usaConocimiento = this.config.fuentes.includes("CONOCIMIENTO");
     const usaModulos = this.config.fuentes.includes("LECCIONES");
 
+    // 0. Lo PRIMERO es analizar el mensaje actual. Un saludo, "¿qué puedes
+    //    hacer?" o un "gracias" se responden directamente: no se busca
+    //    contenido, no se usa el módulo ni la conversación anterior y no se
+    //    gasta una consulta a la IA.
+    const inicial = interpretarConsulta(historial);
+    if (INTENCIONES_SOCIALES.includes(inicial.intencion)) {
+      return {
+        respuesta: ChatbotRules.respuestaSocial(inicial, ultima) ?? "",
+        fuentes: [],
+        modo: this.modelo.disponible ? "ia" : "basico",
+        sugerencias: ChatbotRules.sugerencias(inicial),
+        meta: { modo: "basico", intencion: inicial.intencion, tema: null, conInformacion: true, contexto: null },
+      };
+    }
+
     // 1. Contexto: página actual (módulo o evaluación) y banco de enunciados.
     const [paginaCruda, enunciados] = await Promise.all([
       this.contexto.describirPagina(paginaActual),
@@ -40,8 +56,8 @@ export class ResponderConsultaUseCase {
     const pagina = paginaCruda && (usaModulos || paginaCruda.tipo === "evaluacion") ? paginaCruda : null;
 
     // 2. Interpretar QUÉ pide y DE QUÉ habla (seguimientos y tema del módulo incluidos).
-    let consulta = interpretarConsulta(historial);
-    if (pagina?.tipo === "modulo") consulta = completarConTemaDelModulo(consulta, pagina);
+    let consulta = inicial;
+    if (pagina?.tipo === "modulo") consulta = completarConTemaDelModulo(consulta, pagina, ultima);
 
     const fragmentos = ChatbotRules.recortarFragmentos(
       await this.contexto.buscarFragmentos(ChatbotRules.terminosDeBusqueda(historial, consulta, pagina), this.config.fuentes)
@@ -57,6 +73,8 @@ export class ResponderConsultaUseCase {
     const consultaParaResponder = usaConocimiento ? consulta : { ...consulta, conceptos: [] };
 
     const fuentes = fragmentos
+      // Solo enlaces relacionados con la pregunta actual (o con el tema reconocido en ella).
+      .filter((f) => ChatbotRules.fragmentoRelacionado([f], `${ultima} ${consultaParaResponder.conceptos.map((c) => c.nombre).join(" ")}`) !== null)
       .filter((f, i, arr) => arr.findIndex((x) => x.url === f.url) === i)
       .slice(0, 3)
       .map(({ titulo, url, tipo }) => ({ titulo, url, tipo }));
@@ -66,7 +84,9 @@ export class ResponderConsultaUseCase {
       intencion: consulta.intencion,
       tema: consulta.conceptos[0]?.id ?? null,
       conInformacion:
-        consulta.intencion === "respuesta-evaluacion" || consultaParaResponder.conceptos.length > 0 || fragmentos.length > 0,
+        consulta.intencion === "respuesta-evaluacion" ||
+        consultaParaResponder.conceptos.length > 0 ||
+        ChatbotRules.fragmentoRelacionado(fragmentos, ultima) !== null,
       contexto: pagina?.tipo ?? null,
     });
 
@@ -87,13 +107,13 @@ export class ResponderConsultaUseCase {
 
     const respuesta = coincideConEvaluacion
       ? ChatbotRules.respuestaEvaluacionProtegida(consultaParaResponder)
-      : ChatbotRules.respuestaModoBasico(consultaParaResponder, fragmentos, pagina);
+      : ChatbotRules.respuestaModoBasico(consultaParaResponder, fragmentos, pagina, ultima);
     return {
       respuesta,
       fuentes: coincideConEvaluacion ? [] : fuentes,
       modo: "basico",
       sugerencias: coincideConEvaluacion ? [] : sugerencias,
-      meta: meta("basico"),
+      meta: respuesta === MENSAJE_FUERA_DE_TEMA ? { ...meta("basico"), intencion: "fuera-de-tema" } : meta("basico"),
     };
   }
 }

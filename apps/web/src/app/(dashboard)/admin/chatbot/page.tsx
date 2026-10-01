@@ -16,6 +16,10 @@ const ETIQUETA_INTENCION: Record<string, string> = {
   situacion: "Situaciones y casos",
   "respuesta-evaluacion": "Pidió respuestas de evaluación (rechazado)",
   general: "Otras consultas",
+  saludo: "Saludos",
+  capacidades: "¿Qué puedes hacer?",
+  cortesia: "Agradecimientos y despedidas",
+  "fuera-de-tema": "Fuera de tema (redirigidas)",
 };
 const DIAS = 30;
 
