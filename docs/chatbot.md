@@ -15,7 +15,25 @@ En producción: `npx prisma migrate deploy`.
 
 Si la migración todavía no se aplicó, el chatbot funciona igual con la configuración por defecto (activo y con todos los contenidos); solo no se guardan estadísticas.
 
-**Comprensión completa con IA:** requiere `ANTHROPIC_API_KEY` en Vercel. Sin ella funciona en modo básico. **Panel → Chatbot** muestra el estado.
+**Comprensión completa con IA:** requiere una clave de **Google Gemini** (`GEMINI_API_KEY`) o de **Anthropic** (`ANTHROPIC_API_KEY`) en Vercel. Sin ninguna, funciona en modo básico. **Panel → Chatbot** muestra el proveedor y el modelo activos.
+
+### Activar con Google Gemini
+
+1. Entra a https://aistudio.google.com/apikey y crea (o copia) tu clave de API.
+   - Solo se necesita la **clave**: el nombre, el nombre del proyecto y el número del proyecto no se usan.
+   - No compartas la clave ni la pegues en el código ni en GitHub.
+2. En **Vercel → tu proyecto → Settings → Environment Variables**, agrega:
+   - Nombre: `GEMINI_API_KEY`
+   - Valor: tu clave
+   - Entorno: Production
+3. **Vuelve a desplegar** (Deployments → Redeploy). Las variables solo se aplican en un despliegue nuevo.
+4. Comprueba en **Panel → Chatbot** que diga "Inteligencia artificial activa · Proveedor: Google Gemini".
+
+**Opcional:**
+- `GEMINI_MODEL` fija un modelo concreto. Si no existe o Google lo retira, el chatbot prueba automáticamente: gemini-3.8-flash → 3.7 → 3.5 → 2.5.
+- Si configuras las dos claves, se usa Gemini, salvo que pongas `CHATBOT_PROVIDER=anthropic`.
+
+**Nivel gratuito y de pago:** Google AI Studio ofrece un nivel gratuito con límites de uso. El nivel de pago amplía los límites y requiere configurar la facturación en AI Studio. Revisa los términos de uso de cada nivel, en especial sobre el uso de los datos enviados. El chatbot no envía datos personales del estudiante: solo la pregunta, el contexto del módulo y el contenido de la plataforma.
 
 ## Para el estudiante
 

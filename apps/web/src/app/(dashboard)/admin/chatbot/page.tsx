@@ -4,6 +4,7 @@ import { CONCEPTOS } from "@/modules/chatbot/domain/chatbot-knowledge";
 import { resumirUso } from "@/modules/chatbot/domain/chatbot-config";
 import { PrismaChatbotConfigRepository } from "@/modules/chatbot/infrastructure/prisma-chatbot-config.repository";
 import { ChatbotConfigForm } from "@/modules/admin/presentation/chatbot-config-form";
+import { describirProveedor } from "@/modules/chatbot/infrastructure/language-model.factory";
 
 export const dynamic = "force-dynamic";
 
@@ -26,8 +27,8 @@ export default async function AdminChatbotPage() {
     repo.consultasDesde(new Date(Date.now() - DIAS * 24 * 60 * 60 * 1000)),
   ]);
   const stats = resumirUso(registros);
-  const iaActiva = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
-  const modelo = process.env.CHATBOT_MODEL?.trim() || "claude-haiku-4-5-20251001";
+  const ia = describirProveedor();
+  const iaActiva = ia.proveedor !== "ninguno";
   const nombreTema = (id: string) => CONCEPTOS.find((c) => c.id === id)?.nombre ?? id;
 
   return (
@@ -56,17 +57,21 @@ export default async function AdminChatbotPage() {
           </h2>
           {iaActiva ? (
             <p className="text-sm text-foreground">
-              Interpreta preguntas en lenguaje natural con el modelo <code className="text-xs">{modelo}</code>, usando solo los contenidos
-              marcados, el módulo que el estudiante está viendo y la conversación previa.
+              Proveedor: <strong>{ia.nombre}</strong> · modelo <code className="text-xs">{ia.modelo}</code>. Interpreta preguntas en
+              lenguaje natural usando solo los contenidos marcados, el módulo que el estudiante está viendo y la conversación previa.
             </p>
           ) : (
             <div className="text-sm text-foreground flex flex-col gap-2">
               <p>
-                Falta la variable <code className="text-xs">ANTHROPIC_API_KEY</code>. El asistente responde con su base de{" "}
+                No hay una clave de IA configurada (<code className="text-xs">GEMINI_API_KEY</code> o{" "}
+                <code className="text-xs">ANTHROPIC_API_KEY</code>). El asistente responde con su base de{" "}
                 {CONCEPTOS.length} conceptos (definición, ejemplo, explicación sencilla, diferencias, situaciones) y con los contenidos
                 marcados, pero no comprende temas fuera de ellos.
               </p>
-              <p>Para activarla: crea una clave en console.anthropic.com, agrégala en Vercel → Settings → Environment Variables y vuelve a desplegar.</p>
+              <p>
+                Para activarla con Gemini: crea una clave en aistudio.google.com/apikey, agrégala en Vercel → Settings → Environment
+                Variables como <code className="text-xs">GEMINI_API_KEY</code> y vuelve a desplegar.
+              </p>
             </div>
           )}
         </section>

@@ -247,3 +247,12 @@ A	apps/web/src/modules/chatbot/infrastructure/prisma-chatbot-config.repository.t
 M	apps/web/src/modules/chatbot/presentation/chatbot-widget.tsx
 A	docs/chatbot.md
 A	docs/img/chatbot/ventana-escritorio-celular.png
+
+=== CHATBOT: soporte para Google Gemini (GEMINI_API_KEY) ===
+M	apps/web/.env.example
+M	apps/web/src/app/(dashboard)/admin/chatbot/page.tsx
+M	apps/web/src/app/api/chatbot/route.ts
+A	apps/web/src/modules/chatbot/infrastructure/gemini-chat.model.test.ts
+A	apps/web/src/modules/chatbot/infrastructure/gemini-chat.model.ts
+A	apps/web/src/modules/chatbot/infrastructure/language-model.factory.ts
+M	docs/chatbot.md

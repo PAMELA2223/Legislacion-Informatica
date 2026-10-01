@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthContext } from "@/lib/authorization";
 import { prisma } from "@/lib/prisma";
 import { PrismaChatContextRepository } from "@/modules/chatbot/infrastructure/prisma-chat-context.repository";
-import { AnthropicChatModel } from "@/modules/chatbot/infrastructure/anthropic-chat.model";
+import { crearModeloDeLenguaje } from "@/modules/chatbot/infrastructure/language-model.factory";
 import { ResponderConsultaUseCase } from "@/modules/chatbot/application/chatbot.use-cases";
 import { PrismaChatbotConfigRepository } from "@/modules/chatbot/infrastructure/prisma-chatbot-config.repository";
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   const pagina = typeof body?.pagina === "string" ? body.pagina.slice(0, 200) : null;
 
   try {
-    const useCase = new ResponderConsultaUseCase(new PrismaChatContextRepository(prisma), new AnthropicChatModel(), config);
+    const useCase = new ResponderConsultaUseCase(new PrismaChatContextRepository(prisma), crearModeloDeLenguaje(), config);
     const { meta, ...respuesta } = await useCase.execute(body?.mensajes, pagina);
     // Estadísticas de uso: solo tipo de consulta y tema, nunca el texto.
     if (ctx.rol === "ESTUDIANTE") await configRepo.registrarConsulta(ctx.id, meta);
