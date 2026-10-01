@@ -12,13 +12,15 @@ const CONFIG = [
     tipo: TIPO_EVALUACION.INICIAL,
     nombre: "Autoevaluación inicial",
     tituloPorDefecto: "Autoevaluación inicial: legislación informática",
-    detalle: "Obligatoria al primer ingreso. Diagnóstico de conocimientos previos; bloquea los módulos hasta completarse.",
+    detalle:
+      "Obligatoria al primer ingreso. Diagnóstico de conocimientos previos con 1 solo intento; bloquea los módulos hasta completarse.",
   },
   {
     tipo: TIPO_EVALUACION.FINAL,
     nombre: "Autoevaluación final",
     tituloPorDefecto: "Autoevaluación final: legislación informática",
-    detalle: "Obligatoria al completar todos los módulos y sus evaluaciones. Se compara con la inicial.",
+    detalle:
+      "Obligatoria al completar todos los módulos y sus evaluaciones. Hasta 3 intentos: cuenta la mayor nota, que se compara con la inicial.",
   },
 ] as const;
 
@@ -36,17 +38,28 @@ export default async function AdminAutoevaluacionesPage() {
     },
   });
 
-  // Primer intento por estudiante (la autoevaluación se responde una sola vez).
-  type Intento = { puntaje: number; fecha: Date; nombre: string; email: string };
-  const primerIntentoDetalle = (tipo: string) => {
+  // Nota que cuenta por estudiante (misma regla que ve el estudiante):
+  //   inicial → su único intento; final → la MAYOR nota de hasta 3 intentos.
+  type Intento = { puntaje: number; fecha: Date; nombre: string; email: string; intentos: number };
+  const notaQueCuenta = (tipo: string, regla: "primera" | "mayor") => {
     const ev = evaluaciones.find((e) => e.tipo === tipo);
     const mapa = new Map<string, Intento>();
-    for (const i of ev?.intentos ?? [])
-      if (!mapa.has(i.userId)) mapa.set(i.userId, { puntaje: i.puntaje, fecha: i.fecha, nombre: i.user.nombre, email: i.user.email });
+    for (const i of ev?.intentos ?? []) {
+      const actual = mapa.get(i.userId);
+      if (!actual) {
+        mapa.set(i.userId, { puntaje: i.puntaje, fecha: i.fecha, nombre: i.user.nombre, email: i.user.email, intentos: 1 });
+      } else {
+        actual.intentos++;
+        if (regla === "mayor" && i.puntaje > actual.puntaje) {
+          actual.puntaje = i.puntaje;
+          actual.fecha = i.fecha;
+        }
+      }
+    }
     return mapa;
   };
-  const detalleInicial = primerIntentoDetalle(TIPO_EVALUACION.INICIAL);
-  const detalleFinal = primerIntentoDetalle(TIPO_EVALUACION.FINAL);
+  const detalleInicial = notaQueCuenta(TIPO_EVALUACION.INICIAL, "primera");
+  const detalleFinal = notaQueCuenta(TIPO_EVALUACION.FINAL, "mayor");
   const soloPuntaje = (m: Map<string, Intento>) => new Map(Array.from(m, ([k, v]) => [k, v.puntaje]));
   const inicial = soloPuntaje(detalleInicial);
   const final = soloPuntaje(detalleFinal);
@@ -143,7 +156,7 @@ export default async function AdminAutoevaluacionesPage() {
 
       <h2 className="font-semibold text-foreground mt-10 mb-1">Intentos registrados</h2>
       <p className="text-sm text-muted-foreground mb-3">
-        Resultado de cada estudiante en la autoevaluación inicial y en la final (cada una se responde una sola vez).
+        Resultado de cada estudiante: la inicial tiene un solo intento; de la final se muestra la mayor nota (hasta 3 intentos).
       </p>
       {filas.length === 0 ? (
         <p className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted-foreground">
@@ -156,7 +169,7 @@ export default async function AdminAutoevaluacionesPage() {
               <tr className="bg-background-secondary text-left text-xs text-muted-foreground">
                 <th scope="col" className="px-4 py-3 font-medium">Estudiante</th>
                 <th scope="col" className="px-4 py-3 font-medium">Autoevaluación inicial</th>
-                <th scope="col" className="px-4 py-3 font-medium">Autoevaluación final</th>
+                <th scope="col" className="px-4 py-3 font-medium">Autoevaluación final (mayor nota)</th>
                 <th scope="col" className="px-4 py-3 font-medium">Mejora</th>
               </tr>
             </thead>
@@ -183,7 +196,9 @@ export default async function AdminAutoevaluacionesPage() {
                       {f.fin ? (
                         <>
                           <span className="font-semibold text-foreground">{f.fin.puntaje}%</span>
-                          <span className="block text-xs text-muted-foreground">{fecha(f.fin.fecha)}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {f.fin.intentos} de 3 intentos · {fecha(f.fin.fecha)}
+                          </span>
                         </>
                       ) : (
                         <span className="text-xs text-muted-foreground">Pendiente</span>

@@ -21,11 +21,18 @@ export interface IntentoResumen {
   fecha: string; // ISO
 }
 
+/**
+ * Intentos permitidos por autoevaluación:
+ * - inicial: 1 (diagnóstico de conocimientos previos; se toma ese intento);
+ * - final: hasta 3, y cuenta la MAYOR nota obtenida.
+ */
+export const INTENTOS_PERMITIDOS = { inicial: 1, final: 3 } as const;
+
 export interface DatosAutoevaluacion {
   evaluationId: string | null; // null = el administrador todavía no la creó
   preguntasActivas: number;
-  /** Primer intento registrado (la autoevaluación se responde una sola vez). */
-  intento: IntentoResumen | null;
+  /** Todos los intentos del estudiante, en orden cronológico. */
+  intentos: IntentoResumen[];
 }
 
 export interface DatosModulo {
@@ -62,9 +69,15 @@ export interface EstadoModulo extends DatosModulo {
 export interface EstadoAutoevaluacion {
   evaluationId: string | null;
   configurada: boolean;
+  /** Tiene al menos un intento (etapa cumplida). */
   completada: boolean;
+  /** Nota que cuenta: inicial → su único intento; final → la mayor. */
   puntaje: number | null;
+  /** Fecha del intento que cuenta. */
   fecha: string | null;
+  intentosRealizados: number;
+  intentosPermitidos: number;
+  intentosRestantes: number;
 }
 
 export interface EstadoAprendizaje {
@@ -81,13 +94,25 @@ export interface EstadoAprendizaje {
   siguienteModulo: EstadoModulo | null;
 }
 
-function estadoAutoevaluacion(datos: DatosAutoevaluacion): EstadoAutoevaluacion {
+/** El intento que cuenta: el primero (inicial) o el de mayor nota (final; ante empate, el más antiguo). */
+export function intentoQueCuenta(intentos: IntentoResumen[], tipo: "inicial" | "final"): IntentoResumen | null {
+  if (intentos.length === 0) return null;
+  if (tipo === "inicial") return intentos[0];
+  return intentos.reduce((mejor, i) => (i.puntaje > mejor.puntaje ? i : mejor));
+}
+
+function estadoAutoevaluacion(datos: DatosAutoevaluacion, tipo: "inicial" | "final"): EstadoAutoevaluacion {
+  const cuenta = intentoQueCuenta(datos.intentos, tipo);
+  const permitidos = INTENTOS_PERMITIDOS[tipo];
   return {
     evaluationId: datos.evaluationId,
     configurada: Boolean(datos.evaluationId) && datos.preguntasActivas > 0,
-    completada: datos.intento !== null,
-    puntaje: datos.intento?.puntaje ?? null,
-    fecha: datos.intento?.fecha ?? null,
+    completada: datos.intentos.length > 0,
+    puntaje: cuenta?.puntaje ?? null,
+    fecha: cuenta?.fecha ?? null,
+    intentosRealizados: datos.intentos.length,
+    intentosPermitidos: permitidos,
+    intentosRestantes: Math.max(0, permitidos - datos.intentos.length),
   };
 }
 
@@ -98,8 +123,8 @@ export class LearningPathRules {
   }
 
   static calcularEstado(entrada: EntradaEstadoAprendizaje): EstadoAprendizaje {
-    const inicial = estadoAutoevaluacion(entrada.inicial);
-    const finalBase = estadoAutoevaluacion(entrada.final);
+    const inicial = estadoAutoevaluacion(entrada.inicial, "inicial");
+    const finalBase = estadoAutoevaluacion(entrada.final, "final");
 
     // Si el administrador aún no configuró la autoevaluación inicial (sin
     // preguntas activas) no se bloquea al estudiante, porque la plataforma
@@ -168,10 +193,11 @@ export class LearningPathRules {
   }
 
   static puedeRendirAutoevaluacionInicial(estado: EstadoAprendizaje): boolean {
-    return estado.inicial.configurada && !estado.inicial.completada;
+    return estado.inicial.configurada && estado.inicial.intentosRestantes > 0;
   }
 
+  /** Habilitada (todos los módulos completos) y con intentos disponibles (máx. 3). */
   static puedeRendirAutoevaluacionFinal(estado: EstadoAprendizaje): boolean {
-    return estado.final.habilitada && !estado.final.completada;
+    return estado.final.habilitada && estado.final.intentosRestantes > 0;
   }
 }

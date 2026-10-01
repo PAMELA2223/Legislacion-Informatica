@@ -10,7 +10,7 @@ actualizar una instalación existente y cómo probarlo.
 |---|---|
 | Autoevaluación inicial obligatoria | `/autoevaluacion/inicial`. El dashboard y los módulos redirigen a ella mientras esté pendiente. Se responde una sola vez. |
 | Módulos con evaluación propia | Cada módulo muestra su contenido y, al terminarlo, su evaluación. Un módulo cuenta como completado con todas las lecciones revisadas **y** la evaluación aprobada (70 %). |
-| Autoevaluación final obligatoria | `/autoevaluacion/final`. Se habilita solo al completar todos los módulos activos. Muestra la comparación inicial → final. |
+| Autoevaluación final obligatoria | `/autoevaluacion/final`. Se habilita solo al completar todos los módulos activos. **Hasta 3 intentos; cuenta la mayor nota.** La retroalimentación por pregunta se muestra al agotar los intentos. Muestra la comparación inicial → final. |
 | Eliminar "Evaluación" | Retirada del menú. `/evaluaciones` redirige a `/modulos`; `/evaluaciones/[id]` sigue existiendo como pantalla de la evaluación, protegida por el flujo. |
 | Eliminar "Infografía" | Retirada del menú. Las infografías se integran como lecciones de tipo *Infografía* dentro de cada módulo. `/infografias` redirige a `/destacados`. |
 | "Videos" → "Lo más destacado" | Nueva sección `/destacados` y su administración en `/admin/destacados`. `/videos` redirige a `/destacados`. |
@@ -141,7 +141,7 @@ de la sección 7 en tu entorno.**
 | 4 | Revisar todas las lecciones del Módulo 1 y rendir su evaluación. | La evaluación solo se habilita tras revisar todo el contenido. Muestra calificación y retroalimentación. El intento queda en `quiz_attempts`. Con 70 % o más aparece "Siguiente módulo". |
 | 5 | Abrir `/autoevaluacion/final` sin completar todo. | Pantalla bloqueada con el progreso. La API de envío responde 403. |
 | 6 | Completar todos los módulos activos y sus evaluaciones. | Se habilita la autoevaluación final (tarjeta al final de `/modulos`). |
-| 7 | Rendir la autoevaluación final. | Comparación inicial → final. En la base de datos: el intento con usuario, puntaje y fecha, y `users.proceso_finalizado_en` con la fecha. |
+| 7 | Rendir la autoevaluación final (hasta 3 veces). | Tras cada intento: "Intento N de 3" y la mayor nota. En `/autoevaluacion/final`, historial de intentos con la nota que cuenta marcada. Un 4.º intento se rechaza (también por API, 409). En la base de datos: cada intento con usuario, puntaje y fecha, y `users.proceso_finalizado_en` desde el primero. |
 | 8 | Como administrador: crear un módulo, agregarle una lección, activarlo, reordenarlo, crear su evaluación, y agregar/editar/desactivar/eliminar preguntas y opciones. Editar las autoevaluaciones inicial y final. Intentar eliminar un módulo con estudiantes. | Todo funciona desde la web. La eliminación se bloquea con un mensaje que sugiere desactivar. |
 | 9 | Revisar el menú (escritorio, lateral y móvil). | No aparecen Evaluaciones, Infografías ni Videos. Aparece "Lo más destacado". Los enlaces viejos redirigen. |
 | 10 | Abrir el botón flotante y preguntar "¿Qué es un dato personal?". | Responde con enlaces a las fuentes. Sin clave de API, responde en modo básico. |
@@ -175,3 +175,17 @@ de la sección 7 en tu entorno.**
   el mismo orden, lo que dejaba la respuesta a la vista. Ahora se mezclan al
   guardar.
 - El servidor aceptaba preguntas con índices de respuesta inválidos.
+
+
+## Intentos de las autoevaluaciones (actualización)
+
+| | Autoevaluación inicial | Autoevaluación final |
+|---|---|---|
+| Intentos | 1 | Hasta 3 |
+| Nota que cuenta | La de su único intento | La **mayor** de los intentos |
+| Retroalimentación por pregunta | Nunca (es diagnóstica) | Al agotar los 3 intentos (antes revelaría las respuestas para el siguiente) |
+| Fin del proceso | — | Se registra con el primer intento; los siguientes solo pueden mejorar la nota |
+
+La regla vive en `modules/learning-path/domain/learning-path.entity.ts` (`INTENTOS_PERMITIDOS`, `intentoQueCuenta`) y la aplican por igual la página del estudiante, la API de envío y el panel (*Autoevaluaciones → Intentos registrados*).
+
+**Corrección incluida en esta actualización.** Al enviar una evaluación (de módulo o autoevaluación), el componente llamaba a `router.refresh()`, que volvía a montarlo: el resultado, la retroalimentación y los intentos desaparecían al instante. Se verificó también en el build de producción. Ahora el resultado permanece en pantalla y los datos actualizados se cargan al pulsar el botón para continuar.

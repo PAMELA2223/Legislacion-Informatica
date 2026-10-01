@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { mostrarAviso } from "@/lib/avisos";
 
 /** Título, instrucciones y tiempo límite de una evaluación o autoevaluación. */
 export function EvaluationSettingsForm({
@@ -30,7 +31,7 @@ export function EvaluationSettingsForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al guardar.");
-      setMensaje({ ok: true, texto: "Cambios guardados." });
+      mostrarAviso("Configuración guardada.");
       router.refresh();
     } catch (err) {
       setMensaje({ ok: false, texto: err instanceof Error ? err.message : "Error al guardar." });

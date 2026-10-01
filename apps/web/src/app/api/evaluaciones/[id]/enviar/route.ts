@@ -6,6 +6,7 @@ import { PrismaEvaluationRepository } from "@/modules/evaluations/infrastructure
 import { EnviarIntentoUseCase } from "@/modules/evaluations/application/evaluation.use-cases";
 import type { RespuestaEstudiante } from "@/modules/evaluations/domain/evaluation.entity";
 import { TIPO_EVALUACION } from "@/modules/evaluations/domain/evaluation-types";
+import { INTENTOS_PERMITIDOS } from "@/modules/learning-path/domain/learning-path.entity";
 
 export async function POST(
   request: Request,
@@ -37,6 +38,25 @@ export async function POST(
     // repetirse en la final: no se revela qué respuestas eran correctas.
     if (acceso.tipo === TIPO_EVALUACION.INICIAL) {
       return NextResponse.json({ puntaje: resultado.puntaje, aprobado: resultado.aprobado, resultadosPorPregunta: [] });
+    }
+
+    // Autoevaluación final: hasta 3 intentos y cuenta la mayor nota. La
+    // retroalimentación por pregunta (que revela las respuestas correctas)
+    // solo se entrega cuando ya no quedan intentos.
+    if (acceso.tipo === TIPO_EVALUACION.FINAL) {
+      const intentos = await prisma.quizAttempt.findMany({
+        where: { userId: ctx.id, evaluationId },
+        select: { puntaje: true },
+      });
+      const intentosRestantes = Math.max(0, INTENTOS_PERMITIDOS.final - intentos.length);
+      return NextResponse.json({
+        puntaje: resultado.puntaje,
+        aprobado: resultado.aprobado,
+        resultadosPorPregunta: intentosRestantes === 0 ? resultado.resultadosPorPregunta : [],
+        intentosRealizados: intentos.length,
+        intentosRestantes,
+        mejorPuntaje: Math.max(...intentos.map((i) => i.puntaje)),
+      });
     }
     return NextResponse.json(resultado);
   } catch (error) {

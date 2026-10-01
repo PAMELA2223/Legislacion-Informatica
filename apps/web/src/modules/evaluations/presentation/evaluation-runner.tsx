@@ -21,6 +21,10 @@ interface ResultadoEvaluacion {
   puntaje: number;
   aprobado: boolean;
   resultadosPorPregunta: ResultadoPregunta[];
+  /** Solo en la autoevaluación final (hasta 3 intentos, cuenta la mayor nota). */
+  intentosRealizados?: number;
+  intentosRestantes?: number;
+  mejorPuntaje?: number;
 }
 
 interface EnlaceAccion {
@@ -94,9 +98,10 @@ export function EvaluationRunner({
         }
         throw new Error(data.error || "Error al enviar la evaluación.");
       }
+      // No se llama a router.refresh() aquí: volvería a montar este componente
+      // y el estudiante perdería su resultado en pantalla. Los datos nuevos
+      // (progreso, intentos, módulos desbloqueados) se cargan al continuar.
       setResultado(data);
-      // Refresca los datos del servidor (progreso, módulos desbloqueados, etc.)
-      router.refresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al enviar la evaluación.");
     } finally {
@@ -120,9 +125,27 @@ export function EvaluationRunner({
             <ClipboardCheck className="w-8 h-8 text-primary mx-auto mb-2" />
             <p className="text-3xl font-bold text-foreground">{resultado.puntaje}%</p>
             <p className="text-sm font-medium text-foreground">Autoevaluación registrada</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Este resultado es diagnóstico: sirve para comparar tu punto de partida con lo aprendido.
-            </p>
+            {resultado.intentosRealizados !== undefined ? (
+              <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-0.5">
+                <span>
+                  Intento {resultado.intentosRealizados} de {resultado.intentosRealizados + (resultado.intentosRestantes ?? 0)}
+                </span>
+                <span className="text-foreground">
+                  Tu mejor nota: <strong>{resultado.mejorPuntaje}%</strong> (es la que se toma en cuenta)
+                </span>
+                <span>
+                  {resultado.intentosRestantes
+                    ? resultado.intentosRestantes === 1
+                      ? "Te queda 1 intento para mejorarla."
+                      : `Te quedan ${resultado.intentosRestantes} intentos para mejorarla.`
+                    : "Ya usaste todos tus intentos: abajo puedes revisar cada pregunta."}
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">
+                Este resultado es diagnóstico: sirve para comparar tu punto de partida con lo aprendido.
+              </p>
+            )}
           </div>
         ) : (
           <div
@@ -141,9 +164,11 @@ export function EvaluationRunner({
 
         <div className="flex flex-wrap gap-3">
           {enlaceTrasEnviar && (
-            <Link href={enlaceTrasEnviar.href}>
+            // Navegación completa (no <Link>): garantiza que la siguiente
+            // pantalla muestre los datos recién guardados y no una copia en caché.
+            <a href={enlaceTrasEnviar.href}>
               <Button>{enlaceTrasEnviar.label}</Button>
-            </Link>
+            </a>
           )}
           {!esAutoevaluacion && !resultado.aprobado && (
             <Button variant="outline" onClick={reintentar}>

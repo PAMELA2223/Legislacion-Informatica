@@ -102,14 +102,11 @@ export class PrismaLearningPathRepository implements ILearningPathRepository {
     const intentosDe = (evaluationId?: string) =>
       evaluationId ? intentos.filter((i) => i.evaluationId === evaluationId) : [];
 
-    const autoevaluacion = (ev: typeof inicialEval): DatosAutoevaluacion => {
-      const primero = intentosDe(ev?.id)[0];
-      return {
-        evaluationId: ev?.id ?? null,
-        preguntasActivas: ev?._count.preguntas ?? 0,
-        intento: primero ? resumen(primero) : null,
-      };
-    };
+    const autoevaluacion = (ev: typeof inicialEval): DatosAutoevaluacion => ({
+      evaluationId: ev?.id ?? null,
+      preguntasActivas: ev?._count.preguntas ?? 0,
+      intentos: intentosDe(ev?.id).map(resumen), // orden cronológico (orderBy fecha asc)
+    });
 
     return {
       inicial: autoevaluacion(inicialEval),

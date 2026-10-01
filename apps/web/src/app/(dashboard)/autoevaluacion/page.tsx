@@ -53,6 +53,15 @@ export default async function AutoevaluacionPage() {
               <Button>Rendir autoevaluación final</Button>
             </Link>
           )}
+          {estado.final.completada && (
+            <Link href="/autoevaluacion/final">
+              <Button variant="outline">
+                {estado.final.intentosRestantes > 0
+                  ? `Ver mis intentos (${estado.final.intentosRealizados} de ${estado.final.intentosPermitidos}) · mejorar nota`
+                  : "Ver mis intentos"}
+              </Button>
+            </Link>
+          )}
           {estado.etapa === "MODULOS" && (
             <Link href="/modulos">
               <Button variant="outline">Continuar con los módulos</Button>

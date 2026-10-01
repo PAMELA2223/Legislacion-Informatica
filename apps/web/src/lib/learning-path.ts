@@ -75,7 +75,13 @@ export async function verificarAccesoEvaluacion(ctx: AuthContext, evaluationId: 
 
   if (evaluacion.tipo === TIPO_EVALUACION.FINAL) {
     if (evaluationId !== estado.final.evaluationId) return denegar("Esta evaluación no está disponible.", "/autoevaluacion");
-    if (estado.final.completada) return denegar("Ya completaste la autoevaluación final.", "/autoevaluacion", 409);
+    if (estado.final.intentosRestantes === 0) {
+      return denegar(
+        `Ya usaste tus ${estado.final.intentosPermitidos} intentos de la autoevaluación final. Se tomó en cuenta tu mejor nota: ${estado.final.puntaje}%.`,
+        RUTA_AUTOEVALUACION_FINAL,
+        409
+      );
+    }
     if (!LearningPathRules.puedeRendirAutoevaluacionFinal(estado)) {
       return denegar(
         "La autoevaluación final se habilita cuando completes todos los módulos y sus evaluaciones.",

@@ -33,7 +33,9 @@ export function ResultsComparison({
       </div>
       <div>
         <div className="flex justify-between text-sm mb-1">
-          <span className="text-foreground font-medium">Autoevaluación final</span>
+          <span className="text-foreground font-medium">
+            Autoevaluación final <span className="text-xs font-normal text-muted-foreground">(mayor nota)</span>
+          </span>
           <span className="text-foreground font-semibold">{final !== null ? `${final}%` : "Pendiente"}</span>
         </div>
         <ProgressBar value={final ?? 0} />
