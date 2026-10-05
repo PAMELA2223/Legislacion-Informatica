@@ -30,48 +30,79 @@ import type {
   IAuthRepository,
   LoginInput,
   RegisterInput,
+  ResultadoRegistro,
 } from "../domain/auth-repository.interface";
 import type { User } from "../domain/user.entity";
+import { esErrorCorreoNoConfirmado, traducirErrorAuth } from "../domain/registro";
 
 export class SupabaseAuthRepository implements IAuthRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async register({ email, password, nombre }: RegisterInput): Promise<User> {
+  /**
+   * Registro SIN confirmación por correo:
+   *  1. El servidor (/api/auth/registro) crea la cuenta ya confirmada, con la
+   *     clave de servicio. Supabase no envía ningún correo.
+   *  2. Se inicia sesión de inmediato: el estudiante entra directamente.
+   * Respaldo: si el servidor no tiene configurada la clave de servicio, se usa
+   * el registro estándar de Supabase (que depende de la opción "Confirm email"
+   * del panel de Supabase).
+   */
+  async register({ email, password, nombre }: RegisterInput): Promise<ResultadoRegistro> {
+    const usuario = (id: string): User => ({ id, email, nombre, rol: "ESTUDIANTE", xp: 0, nivel: 1 });
+
+    const res = await fetch("/api/auth/registro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, nombre }),
+    }).catch(() => null);
+    if (!res) throw new Error(traducirErrorAuth("Failed to fetch"));
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 503 && data.codigo === "SIN_CLAVE_SERVICIO") {
+      return this.registroEstandar({ email, password, nombre });
+    }
+    if (!res.ok) throw new Error(data.error || "No se pudo crear la cuenta.");
+
+    const { error } = await this.supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(traducirErrorAuth(error.message));
+    return { usuario: usuario(data.id), sesionIniciada: true };
+  }
+
+  /** Respaldo: registro estándar de Supabase desde el navegador. */
+  private async registroEstandar({ email, password, nombre }: RegisterInput): Promise<ResultadoRegistro> {
     const { data, error } = await this.supabase.auth.signUp({
       email,
       password,
       options: {
+        // El rol nunca se toma de aquí (ver nota de cabecera); se deja por compatibilidad.
         data: { nombre, rol: "ESTUDIANTE" },
-        // Explícito en vez de depender solo del "Site URL" configurado en
-        // el panel de Supabase (Authentication → URL Configuration): así,
-        // el correo de confirmación siempre apunta al dominio correcto
-        // según en qué entorno corre la app (local vs. producción), leído
-        // de NEXT_PUBLIC_SITE_URL. El panel de Supabase sigue necesitando
-        // tener este mismo dominio en su lista de "Redirect URLs" permitida
-        // (por seguridad, Supabase rechaza redirects a dominios no listados
-        // ahí aunque el código los pida).
         emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login`,
       },
     });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(traducirErrorAuth(error.message));
     if (!data.user) throw new Error("No se pudo crear el usuario.");
-
     return {
-      id: data.user.id,
-      email: data.user.email ?? email,
-      nombre,
-      rol: "ESTUDIANTE",
-      xp: 0,
-      nivel: 1,
+      usuario: { id: data.user.id, email: data.user.email ?? email, nombre, rol: "ESTUDIANTE", xp: 0, nivel: 1 },
+      // Si "Confirm email" está desactivado en Supabase, la sesión llega de inmediato.
+      sesionIniciada: Boolean(data.session),
     };
   }
 
   async login({ email, password }: LoginInput): Promise<User> {
-    const { data, error } = await this.supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw new Error(error.message);
+    let { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+
+    // Cuenta creada antes de quitar la confirmación por correo y que quedó
+    // pendiente: se activa automáticamente (el servidor verifica la contraseña).
+    if (esErrorCorreoNoConfirmado(error)) {
+      const res = await fetch("/api/auth/confirmar-cuenta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      }).catch(() => null);
+      if (res?.ok) ({ data, error } = await this.supabase.auth.signInWithPassword({ email, password }));
+    }
+
+    if (error) throw new Error(traducirErrorAuth(error.message));
     if (!data.user) throw new Error("Credenciales inválidas.");
 
     // Nombre: puramente informativo (mostrar "Hola, {nombre}"), sin riesgo
@@ -99,14 +130,14 @@ export class SupabaseAuthRepository implements IAuthRepository {
     const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/recuperar-password/nueva`,
     });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(traducirErrorAuth(error.message));
   }
 
   async updatePassword(newPassword: string): Promise<void> {
     const { error } = await this.supabase.auth.updateUser({
       password: newPassword,
     });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(traducirErrorAuth(error.message));
   }
 
   async getCurrentUser(): Promise<User | null> {

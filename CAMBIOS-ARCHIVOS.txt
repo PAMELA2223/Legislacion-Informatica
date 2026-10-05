@@ -268,3 +268,24 @@ M	apps/web/src/modules/chatbot/domain/chatbot.entity.test.ts
 M	apps/web/src/modules/chatbot/domain/chatbot.entity.ts
 M	apps/web/src/modules/chatbot/presentation/chatbot-widget.tsx
 M	docs/chatbot.md
+
+=== README renovado y REGISTRO SIN CONFIRMACIÓN POR CORREO (+ página de nueva contraseña y rol seguro) ===
+M	README.md
+A	apps/web/src/app/(auth)/recuperar-password/nueva/page.tsx
+A	apps/web/src/app/api/auth/confirmar-cuenta/route.ts
+A	apps/web/src/app/api/auth/registro/route.ts
+M	apps/web/src/lib/get-authenticated-user.ts
+A	apps/web/src/lib/limite-intentos.ts
+M	apps/web/src/modules/auth/application/auth.use-cases.test.ts
+A	apps/web/src/modules/auth/application/registro.use-cases.test.ts
+A	apps/web/src/modules/auth/application/registro.use-cases.ts
+A	apps/web/src/modules/auth/domain/auth-admin.interface.ts
+M	apps/web/src/modules/auth/domain/auth-repository.interface.ts
+A	apps/web/src/modules/auth/domain/registro.test.ts
+A	apps/web/src/modules/auth/domain/registro.ts
+A	apps/web/src/modules/auth/infrastructure/supabase-auth-admin.gateway.ts
+M	apps/web/src/modules/auth/infrastructure/supabase-auth.repository.test.ts
+M	apps/web/src/modules/auth/infrastructure/supabase-auth.repository.ts
+A	apps/web/src/modules/auth/presentation/new-password-form.tsx
+M	apps/web/src/modules/auth/presentation/register-form.tsx
+A	docs/registro-sin-confirmacion.md

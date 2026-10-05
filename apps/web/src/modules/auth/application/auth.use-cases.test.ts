@@ -9,12 +9,8 @@ import type { IAuthRepository } from "../domain/auth-repository.interface";
 function crearRepositorioFalso(): IAuthRepository {
   return {
     register: vi.fn().mockResolvedValue({
-      id: "1",
-      email: "test@example.com",
-      nombre: "Test",
-      rol: "ESTUDIANTE",
-      xp: 0,
-      nivel: 1,
+      usuario: { id: "1", email: "test@example.com", nombre: "Test", rol: "ESTUDIANTE", xp: 0, nivel: 1 },
+      sesionIniciada: true,
     }),
     login: vi.fn(),
     logout: vi.fn(),

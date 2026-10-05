@@ -7,7 +7,8 @@
 // la próxima vez que inicien sesión, su fila en Prisma se crea automáticamente.
 //
 // IMPORTANTE — fuente de verdad del ROL:
-// El campo `rol` se toma del metadata de Supabase Auth SOLO al CREAR el
+// El campo `rol` se toma de `app_metadata` de Supabase Auth (que solo el
+// servidor puede escribir; nunca de `user_metadata`) SOLO al CREAR el
 // registro por primera vez. En actualizaciones posteriores NO se vuelve a
 // pisar con el metadata, porque una vez que un administrador cambia el rol
 // (vía /admin/usuarios), la tabla de Prisma pasa a ser la fuente de verdad
@@ -18,9 +19,7 @@
 
 import { createSupabaseServerClient } from "./supabase-server";
 import { prisma } from "./prisma";
-import type { Rol } from "@prisma/client";
-
-const ROLES_VALIDOS: Rol[] = ["ADMINISTRADOR", "ESTUDIANTE", "INVITADO"];
+import { rolInicial } from "@/modules/auth/domain/registro";
 
 export async function getAuthenticatedUser() {
   const supabase = await createSupabaseServerClient();
@@ -31,7 +30,10 @@ export async function getAuthenticatedUser() {
   if (!user) return null;
 
   const meta = user.user_metadata ?? {};
-  const rolMeta = ROLES_VALIDOS.includes(meta.rol) ? (meta.rol as Rol) : "ESTUDIANTE";
+  // SEGURIDAD: el rol inicial NUNCA sale de user_metadata (lo escribe el propio
+  // usuario al registrarse, y así podría crearse como ADMINISTRADOR). Solo se
+  // confía en app_metadata, que únicamente el servidor puede escribir.
+  const rolMeta = rolInicial(user.app_metadata);
 
   await prisma.user.upsert({
     where: { id: user.id },

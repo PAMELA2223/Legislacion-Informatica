@@ -24,7 +24,9 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  // "directo": cuenta activa y sesión iniciada → entra a la plataforma.
+  // "correo": solo en el modo de respaldo, si Supabase exige confirmar el correo.
+  const [success, setSuccess] = useState<null | "directo" | "correo">(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Estado puramente visual (no forma parte de la lógica de autenticación)
@@ -53,10 +55,18 @@ export function RegisterForm() {
       const supabase = createSupabaseBrowserClient();
       const repo = new SupabaseAuthRepository(supabase);
       const useCase = new RegisterUseCase(repo);
-      await useCase.execute({ nombre, email, password });
+      const { sesionIniciada } = await useCase.execute({ nombre, email, password });
 
-      setSuccess(true);
-      setTimeout(() => router.push("/login"), 2000);
+      if (sesionIniciada) {
+        // Sin confirmación por correo: entra directamente (el dashboard lo
+        // lleva a la autoevaluación inicial si es su primer ingreso).
+        setSuccess("directo");
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        setSuccess("correo");
+        setTimeout(() => router.push("/login"), 2500);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrarse");
     } finally {
@@ -68,9 +78,10 @@ export function RegisterForm() {
     return (
       <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden="true" />
-        <span>
-          Cuenta creada. Revisa tu correo para confirmar tu cuenta. Redirigiendo
-          al inicio de sesión...
+        <span role="status">
+          {success === "directo"
+            ? "¡Cuenta creada! Entrando a la plataforma..."
+            : "Cuenta creada. Revisa tu correo para confirmar tu cuenta. Redirigiendo al inicio de sesión..."}
         </span>
       </div>
     );
