@@ -289,3 +289,13 @@ M	apps/web/src/modules/auth/infrastructure/supabase-auth.repository.ts
 A	apps/web/src/modules/auth/presentation/new-password-form.tsx
 M	apps/web/src/modules/auth/presentation/register-form.tsx
 A	docs/registro-sin-confirmacion.md
+
+=== v12 — Límites de acceso por persona (no por red) ===
+MODIFICADO apps/web/src/lib/limite-intentos.ts
+MODIFICADO apps/web/src/app/api/auth/registro/route.ts
+MODIFICADO apps/web/src/app/api/auth/confirmar-cuenta/route.ts
+MODIFICADO apps/web/src/modules/auth/domain/registro.ts
+MODIFICADO apps/web/src/modules/auth/domain/registro.test.ts
+NUEVO     apps/web/src/lib/limite-intentos.test.ts
+NUEVO     apps/web/src/app/api/auth/registro/route.test.ts
+NUEVO     docs/control-acceso-limites.md

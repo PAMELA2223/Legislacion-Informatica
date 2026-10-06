@@ -52,6 +52,11 @@ export function traducirErrorAuth(mensaje: string | undefined | null): string {
     return "Ya existe una cuenta con este correo. Inicia sesión o recupera tu contraseña.";
   }
   if (m.includes("email not confirmed")) return "No se pudo activar tu cuenta automáticamente. Inténtalo de nuevo.";
+  // Cupo de correos del proyecto Supabase agotado: es un límite GLOBAL del
+  // servidor de correo, no del estudiante; reintentar en minutos no lo resuelve.
+  if (m.includes("email rate limit")) {
+    return "La plataforma alcanzó temporalmente su límite de envío de correos. Avisa al administrador; no es un problema de tu cuenta.";
+  }
   if (m.includes("rate limit") || m.includes("too many") || m.includes("security purposes")) {
     return "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.";
   }

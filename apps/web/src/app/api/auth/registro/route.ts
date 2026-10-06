@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { ipDeLaPeticion, superaLimite } from "@/lib/limite-intentos";
+import { ipDeLaPeticion, superaLimiteAuth } from "@/lib/limite-intentos";
 import { RegistrarCuentaUseCase } from "@/modules/auth/application/registro.use-cases";
 import { CorreoYaRegistradoError } from "@/modules/auth/domain/auth-admin.interface";
 import { traducirErrorAuth } from "@/modules/auth/domain/registro";
@@ -13,17 +13,25 @@ import {
 // Registro SIN confirmación por correo: el servidor crea la cuenta ya
 // confirmada (con la clave de servicio) y el navegador inicia sesión enseguida.
 export async function POST(request: Request) {
-  if (superaLimite(`registro:${ipDeLaPeticion(request)}`, 10, 15 * 60 * 1000)) {
-    return NextResponse.json({ error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." }, { status: 429 });
+  const body = await request.json().catch(() => null);
+  // Límite por persona (IP + correo) y techo anti-abuso por red: varios
+  // estudiantes de la misma aula pueden registrarse sin bloquearse entre sí.
+  if (superaLimiteAuth("registro", ipDeLaPeticion(request), body?.email)) {
+    return NextResponse.json({ error: "Demasiados intentos con este correo. Espera unos minutos e inténtalo de nuevo." }, { status: 429 });
   }
 
   const admin = createSupabaseAdminClient();
   if (!admin) {
-    // Sin clave de servicio el navegador usa el registro anterior de Supabase como respaldo.
+    // Sin clave de servicio el navegador usa el registro estándar de Supabase,
+    // que ENVÍA un correo por cada registro. El servicio de correo incluido en
+    // Supabase permite muy pocos envíos por hora para TODO el proyecto: tras
+    // unos pocos registros, los demás quedan bloqueados hasta que pase la hora.
+    console.error(
+      "[registro] Falta SUPABASE_SERVICE_ROLE_KEY: el registro depende del cupo de correos de Supabase y se bloqueará tras pocos registros por hora."
+    );
     return NextResponse.json({ error: "Registro directo no disponible.", codigo: "SIN_CLAVE_SERVICIO" }, { status: 503 });
   }
 
-  const body = await request.json().catch(() => null);
   try {
     const gateway = new SupabaseAuthAdminGateway(admin, process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
     const r = await new RegistrarCuentaUseCase(gateway, new PrismaUsuariosAppRepository(prisma)).execute(body);

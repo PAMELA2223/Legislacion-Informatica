@@ -38,6 +38,9 @@ describe("errores de autenticación", () => {
     expect(traducirErrorAuth("User already registered")).toMatch(/Ya existe una cuenta/);
     expect(traducirErrorAuth("A user with this email address has already been registered")).toMatch(/Ya existe una cuenta/);
     expect(traducirErrorAuth("For security purposes, you can only request this after 60 seconds")).toMatch(/Demasiados intentos/);
+    // El cupo de correos de Supabase es global: no se le dice al estudiante que "espere unos minutos".
+    expect(traducirErrorAuth("email rate limit exceeded")).toMatch(/límite de envío de correos/);
+    expect(traducirErrorAuth("email rate limit exceeded")).not.toMatch(/Demasiados intentos/);
     expect(traducirErrorAuth("New password should be different from the old password.")).toMatch(/diferente/);
     expect(traducirErrorAuth("Auth session missing!")).toMatch(/enlace expiró/);
     expect(traducirErrorAuth("Mensaje desconocido")).toBe("Mensaje desconocido");
